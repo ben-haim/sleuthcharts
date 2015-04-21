@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link href="bootstrap.min.css" rel="stylesheet"/>
+    </head>
+
+<body>
+	<div class="container">
+		<div class="page-header"><h1></h1></div>
+		<div class="img-responsize">
+			<div class="row">
+				<svg id="ex_chart" width="1000" height="750" class="noselect" style="background:black">
+					<rect id="divider" stroke="black" fill="none" stroke-width="1" x="0" y="0" width="1200" height="750"/>
+					<line id="divider2" stroke="black" x1="0" x2="1000" y1="649.5" y2="649.5"/>
+					
+					<g id="xAxisLabels">
+					
+					</g>
+					
+					<g id="xAxisTicks">
+					
+					</g>
+					
+					<g id="yAxisLabels">
+					
+					</g>
+					
+					<g id="yAxisTicks">
+					
+					</g>
+					
+					<g id="volbars">
+
+					</g>
+					
+					<g id="cursor_follow">
+						<rect id="backbox_vol"/>
+						<rect id="backbox_price"/>
+						<line id="cursor_follow_x" stroke="black" stroke-width="0.5"/>
+						<line id="cursor_follow_y" stroke="black" stroke-width="0.5"/>
+						<text id="cursor_follow_vol"></text>
+						<text id="cursor_follow_price"></text>
+					</g>
+					
+					
+					<g id="boxes">
+					
+					</g>
+					
+					<g id="bottom_scroll">
+
+					</g>
+					
+				</svg>
+				
+
+				Candlesticks:
+				<div class="btn-group" data-toggle="buttons">
+					<label class="btn btn-primary">
+				    	<input type="radio" name="time_width" autocomplete="off" value="3600"> 1h
+				  	</label>
+					<label class="btn btn-primary">
+				    	<input type="radio" name="time_width" autocomplete="off" value="10800"> 3h
+				  	</label>
+					<label class="btn btn-primary active">
+				    	<input type="radio" name="time_width" autocomplete="off" value="21600" checked> 6h
+				  	</label>
+				 	<label class="btn btn-primary">
+				    	<input type="radio" name="time_width" autocomplete="off" value="43200"> 12h
+				  	</label>
+				  	<label class="btn btn-primary">
+				    	<input type="radio" name="time_width" autocomplete="off" value="86400"> 1d
+				  	</label>
+				  	<label class="btn btn-primary">
+				   		<input type="radio" name="time_width" autocomplete="off" value="259200"> 3d
+				  	</label>
+				  	<label class="btn btn-primary">
+				   		<input type="radio" name="time_width" autocomplete="off" value="604800"> 1w
+				  	</label>
+				  	<label class="btn btn-primary">
+				   		<input type="radio" name="time_width" autocomplete="off" value="1209600"> 2w
+				  	</label>
+				  	<label class="btn btn-primary">
+				   		<input type="radio" name="time_width" autocomplete="off" value="2635200"> 1m
+				  	</label>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="jquery.js"></script>
+<script src="bootstrap.min.js"></script>
+<script src="d3.min.js"></script>
+<script src="sleuthcharts.js"></script>
+
+
+</body>
+</html>
