@@ -90,22 +90,48 @@ var IDEX = (function(IDEX, $, undefined)
 	
 	IDEX.Axis.prototype.getPos = function(pointValue)
 	{
-		var num = pointValue - this.min;
-		var range = this.max - this.min;
+		var paddedMax = this.max + (this.max * this.maxPadding)
+		var paddedMin = this.min - (this.min * this.minPadding)
+
+		var num = pointValue - paddedMin;
+		var range = paddedMax - paddedMin;
 		var ratio = num / range;
 		var pos = Number((this.pos.bottom - (ratio * this.height)).toFixed(4));
 		//console.log(String(pointValue) + "    " + String(ratio) + "  " + String(pos));
 		return pos
 	}
 	
+	/*IDEX.Axis.prototype.getPos = function(pointValue)
+	{
+		var num = pointValue - this.min;
+		var range = this.max - this.min;
+		var ratio = num / range;
+		var pos = Number((this.pos.bottom - (ratio * this.height)).toFixed(4));
+		console.log(String(pointValue) + "    " + String(ratio) + "  " + String(pos));
+		return pos
+	}*/
+	
+	
 	IDEX.Axis.prototype.getPriceFromY = function(yPos)
+	{
+		var paddedMax = this.max + (this.max * this.maxPadding)
+		var paddedMin = this.min - (this.min * this.minPadding)
+		
+		var range = paddedMax - paddedMin;
+		var ratio = yPos / this.height;
+		var num = ratio * range
+		var price = paddedMax - num
+		return price
+	}
+	
+	/*IDEX.Axis.prototype.getPriceFromY = function(yPos)
 	{
 		var range = this.max - this.min;
 		var ratio = yPos / this.height;
 		var num = ratio * range
 		var price = this.max - num
 		return price
-	}
+	}*/
 	
 	IDEX.Axis.prototype.getXVal = function(xPos)
 	{

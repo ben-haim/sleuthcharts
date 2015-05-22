@@ -186,7 +186,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		var xAxisOpt = {
 			"chart":curChart,
-			"heightInit":25,
+			"heightInit":20,
 			"widthInit":"90%",
 			
 			"padding":{
@@ -195,7 +195,7 @@ var IDEX = (function(IDEX, $, undefined)
 			},
 			
 			"numTicks":8,
-			"tickLength":7,
+			"tickLength":4,
 			"containerID":"xAxisLabels",
 			"isXAxis":true,
 		}
@@ -209,7 +209,10 @@ var IDEX = (function(IDEX, $, undefined)
 				"left":20,
 			},
 			
-			"numTicks":6,
+			"minPadding":0.1,
+			"maxPadding":0.05,
+			
+			"numTicks":7,
 			"tickLength":7,
 			"containerID":"yAxisLabels",
 		}
@@ -250,7 +253,8 @@ var IDEX = (function(IDEX, $, undefined)
 		calcPointWidth();
 		drawCandleSticks();
 		makePriceAxisLabels();
-		makeTimeAxisLabels();	
+		makeTimeAxisLabels();
+		priceSeriesLine();
 	}
 	
 	function updateChart()
@@ -276,6 +280,7 @@ var IDEX = (function(IDEX, $, undefined)
 			drawCandleSticks();
 			makePriceAxisLabels();
 			makeTimeAxisLabels();
+			priceSeriesLine();
 		})
 	}
 
@@ -474,9 +479,10 @@ var IDEX = (function(IDEX, $, undefined)
 		var gridLines = [];
 		
 		
-		var firstTick = priceAxis.min;
-		var lastTick = priceAxis.max;
+		var firstTick = priceAxis.min - (priceAxis.min * priceAxis.minPadding);
+		var lastTick = priceAxis.max + (priceAxis.max * priceAxis.maxPadding);
 		var axisRange = lastTick - firstTick;
+		
 		
 		var yStart = priceAxis.pos.bottom;
 		var xPos = priceAxis.pos.left;
@@ -486,8 +492,10 @@ var IDEX = (function(IDEX, $, undefined)
 		
 	    for (var i = 0; i < priceAxis.numTicks; i++)
 	    {
+			if (i == 0 || i == priceAxis.numTicks - 1)
+				continue
+			
 			var label = {};
-
 			label.text = String(Math.round(firstTick + (i * priceInterval)));
 			label.y = yStart - (i * heightInterval);
 			label.x = xPos;
@@ -579,9 +587,11 @@ var IDEX = (function(IDEX, $, undefined)
 
 	    for(var i = 0; i < xAxis.numTicks; i++)
 	    {
+			if (i == 0 || i == xAxis.numTicks - 1)
+				continue
+			
 			var label = {};
-			label.text = formatTimeDate(new Date(firstTick + (i * tickInterval)))
-			//label.text = firstTick + (i * tickInterval);
+			label.text = formatTime(new Date(firstTick + (i * tickInterval)))
 			label.x = xStart + (i * xInterval);
 			label.y = yPos;
 			labels.push(label);
@@ -591,19 +601,19 @@ var IDEX = (function(IDEX, $, undefined)
 			tick.y = yPos;
 			ticks.push(tick);
 	    }
-		
-		//var time = new Date((date + GENESIS_TIMESTAMP)*1000);
-		
+				
 		var SVGTimeLabels = d3.select("#xAxisLabels").selectAll("text")
 		.data(labels)
 		.enter()
 		.append("text")
 		
 		SVGTimeLabels
-		.attr("x", function (d) { return d.x })
-		.attr("y", function (d) { return d.y })
+		.attr("x", function (d) { return d.x - 20})
+		.attr("y", function (d) { return d.y + 16 })
 		.text(function (d) { return d.text })
-		.attr("fill", "white");
+		.attr("fill", "#D3D3D3")
+		.attr("font-family", "Helvetica")
+		.attr("font-size", "12px")
 		
 		
 		var SVGTimeTicks = d3.select("#xAxisTicks").selectAll("line")
@@ -638,37 +648,20 @@ var IDEX = (function(IDEX, $, undefined)
 	
 	function formatTime(d)
 	{
+		var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "June",
+		  "July", "Aug", "Sept", "Oct", "Nov", "Dec"
+		];
+		//console.log(d)
+		var month = monthNames[d.getMonth()]
+		var day = d.getDate()
 		var hours = String(d.getHours())
 		var minutes = d.getMinutes()
 		
 		minutes = minutes < 10 ? "0"+String(minutes) : String(minutes)
 		
-		return hours+":"+minutes
+		return month + ". " + day 
 	}
 	
-	
-	var iss = 0
-	$("#clickme").on("click", function()
-	{
-		if (iss == 0)
-		{
-			d3.selectAll("#boxes path").attr("transform", "scale(1,0.7)")
-			d3.select("#yAxisLabels").attr("transform", "scale(1,0.7)")
-		}
-		else
-		{
-			d3.selectAll("#boxes path").attr("transform", "scale(1,1)")
-			d3.select("#yAxisLabels").attr("transform", "scale(1,1)")
-		}
-		
-		iss = 1 - iss;
-		
-		var bb = $("#boxes")[0].getScreenCTM();
-		var cc = d3.select("#boxes")[0][0].getCTM();
-		var bbox = d3.select("#boxes").node().getBBox();
-		console.log(bb)
-		console.log(bbox)
-	})
 
     $("#ex_chart").mousedown(function(e) 
     {
@@ -691,19 +684,49 @@ var IDEX = (function(IDEX, $, undefined)
     })
 
 	
-	function isInside(e)
+	
+	function priceSeriesLine()
 	{
-		var offset = $("#ex_chart").offset()
-		var x = eX - chart.plotLeft - offset.left;
-		var y = eY - chart.plotTop - offset.top;
+		$("#seriesLine").empty();
 		
-		return chart.isInsidePlot(x, y);
-		//var isInsideY = 
+		var bbox = d3.select("#ex_chart")[0][0].getBoundingClientRect()	
+		//console.log(bbox)
 		
-		//if(e.pageY - offsetY > 0 && e.pageY - offsetY <= height && e.pageX - offsetX > 0 && e.pageX - offsetX < 1200)
-
+		d3.select("#seriesLine").append("line")
+		.attr("x1", 0 )
+		.attr("x2", bbox.right)
+		.attr("y1", priceAxis.pos['bottom'])
+		.attr("y2", priceAxis.pos['bottom'])
+		.attr("stroke-width", 0.5)
+		.attr("stroke", "white");
+		
+		d3.select("#seriesLine").append("line")
+		.attr("x1", priceAxis.pos['left'])
+		.attr("x2", priceAxis.pos['left'])
+		.attr("y1", 0)
+		.attr("y2", priceAxis.pos['bottom'])
+		.attr("stroke-width", 0.5)
+		.attr("stroke", "white");
+		
+		d3.select("#seriesLine").append("line")
+		.attr("x1", 0 )
+		.attr("x2", bbox.right)
+		.attr("y1", xAxis.pos['top'])
+		.attr("y2", xAxis.pos['top'])
+		.attr("stroke-width", 0.5)
+		.attr("stroke", "white");
+		
+		d3.select("#seriesLine").append("line")
+		.attr("x1", 0 )
+		.attr("x2", bbox.right)
+		.attr("y1", xAxis.pos['bottom'])
+		.attr("y2", xAxis.pos['bottom'])
+		.attr("stroke-width", 0.5)
+		.attr("stroke", "white");
 	}
-
+	
+	
+	
 
     $(document).on("mousemove", function(e)
     {
@@ -722,13 +745,12 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		//console.log(String(e.pageY) + "  " + String(offsetY));
 		
-		console.log(height)
-		console.log(insideY)
-		if ( insideY > 0 && insideY < height 
-			&& insideX > 0 && insideX < width)
+		if ( insideY >= 0 && insideY <= height 
+			&& insideX >= 0 && insideX <= width)
 		{
 			
-			$("#cursor_follow_x").attr("x1", 0)
+			$("#cursor_follow_x")
+			.attr("x1", 0)
 			.attr("x2", width)
 			.attr("y1", insideY + 0.5)
 			.attr("y2", insideY + 0.5)
@@ -736,15 +758,15 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("stroke", "white");
 
 			$("#cursor_follow_y")
-			.attr("y1", 0)
-			.attr("y2", height)
 			.attr("x1", insideX + 0.5)
 			.attr("x2", insideX + 0.5)
+			.attr("y1", 0)
+			.attr("y2", height)
 			.attr("stroke-width", 1)
 			.attr("stroke", "white");
 			
 			
-			if (insideX > xAxis.padding.left && insideX < xAxis.width + xAxis.padding.left)
+			if (insideX >= xAxis.padding.left && insideX <= xAxis.width + xAxis.padding.left)
 			{
 				var insideTimeX = insideX - xAxis.padding.left;
 				var time = xAxis.getXVal(insideTimeX)
@@ -775,7 +797,7 @@ var IDEX = (function(IDEX, $, undefined)
 			}
 
 			
-			if (insideY > priceAxis.padding.top && insideY < priceAxis.pos.bottom)
+			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom)
 			{
 				var insidePriceY = insideY - priceAxis.padding.top;
 				var price = priceAxis.getPriceFromY(insidePriceY)
@@ -898,3 +920,33 @@ $(window).load(function()
     IDEX.init();
 
 })
+
+
+
+
+/*
+
+	var iss = 0
+	$("#clickme").on("click", function()
+	{
+		if (iss == 0)
+		{
+			d3.selectAll("#boxes path").attr("transform", "scale(1,0.7)")
+			d3.select("#yAxisLabels").attr("transform", "scale(1,0.7)")
+		}
+		else
+		{
+			d3.selectAll("#boxes path").attr("transform", "scale(1,1)")
+			d3.select("#yAxisLabels").attr("transform", "scale(1,1)")
+		}
+		
+		iss = 1 - iss;
+		
+		var bb = $("#boxes")[0].getScreenCTM();
+		var cc = d3.select("#boxes")[0][0].getCTM();
+		var bbox = d3.select("#boxes").node().getBBox();
+		console.log(bb)
+		console.log(bbox)
+	})
+	
+*/
