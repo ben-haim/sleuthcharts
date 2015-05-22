@@ -1,0 +1,22 @@
+html {
+	width: 100%;
+	height: 100%;
+}
+
+body {
+	-webkit-font-smoothing: antialiased;
+	height:100%;
+	width:100%;
+}
+
+#bodyWrap {
+	height:100%;
+	width:100%;
+	min-height:800px;
+}
+
+#chartwrap {
+	display:block;
+	width:80%;
+	height:90%;
+}

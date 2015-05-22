@@ -3,7 +3,7 @@ var IDEX = (function(IDEX, $, undefined)
 	var GENESIS_TIMESTAMP = 1385294400;
     var nxtURL = "http://127.0.0.1:7876/nxt?";
 	var curChart;
-	var timeAxis;
+	var xAxis;
 	var priceAxis;
 	var volumeAxis;
 
@@ -182,20 +182,58 @@ var IDEX = (function(IDEX, $, undefined)
 	function makeChart()
 	{
 		curChart = new IDEX.Chart();
-		timeAxis = new IDEX.Axis();
-		timeAxis.width = 900;
-		timeAxis.height = 50;
-		timeAxis.top = 650;
-		timeAxis.left = 10;
-		timeAxis.bottom = 700;
-		timeAxis.numTicks = 8;
-		priceAxis = new IDEX.Axis()
-		priceAxis.height = 600;
-		priceAxis.width = 90;
-		priceAxis.bottom = 650;
-		priceAxis.top = 50;
-		priceAxis.left = 910;
-		priceAxis.numTicks = 6;
+		curChart.node = "#ex_chart";
+		
+		var xAxisOpt = {
+			"chart":curChart,
+			"heightInit":50,
+			"widthInit":"90%",
+			
+			"numTicks":8,
+			"containerID":"xAxisLabels",
+			"isXAxis":true,
+		}
+		var priceAxisOpt = {
+			"chart":curChart,
+			"heightInit":"60%",
+			"widthInit":50,
+			
+			"numTicks":6,
+			"containerID":"yAxisLabels",
+		}
+		
+		xAxis = new IDEX.Axis(xAxisOpt);
+		priceAxis = new IDEX.Axis(priceAxisOpt)
+		
+		xAxis.resize()
+		priceAxis.resize()
+		
+		var candleSeriesOpt = {
+			"xAxis":xAxis,
+			"yAxis":priceAxis,
+		};
+		var candleSeries = new IDEX.Series(candleSeriesOpt)
+		
+		candleSeries.height = candleSeries.yAxis.height;
+		candleSeries.width = candleSeries.xAxis.width;
+		
+		priceAxis.pos['left'] = candleSeries.width;
+		priceAxis.pos['bottom'] = priceAxis.height;
+		
+		xAxis.pos['left'] = 10;
+		xAxis.pos['bottom'] = candleSeries.height + xAxis.height;
+		
+		console.log(xAxis)
+		console.log(priceAxis)
+		
+	}
+	
+	function redraw()
+	{
+		calcPointWidth();
+		drawCandleSticks();
+		makePriceAxisLabels();
+		makeTimeAxisLabels();	
 	}
 	
 	function updateChart()
@@ -209,10 +247,10 @@ var IDEX = (function(IDEX, $, undefined)
 			var both = getStepOHLC(data.results);
 			var ohlc = both[0]
 			var vol = both[1]
-			console.log(both)
-			console.log(data)
+			//console.log(both)
+			//console.log(data)
+			
 			makeChart()
-			//updateHeightWidth();
 			
 			curChart.barWidth = barWidth
 			curChart.phases = ohlc
@@ -226,23 +264,51 @@ var IDEX = (function(IDEX, $, undefined)
 
 	$(window).resize(function()
 	{
-		var height = $("#chartWrap").height();
-		var width = $("#chartWrap").width();
-	})
-	
-	function updateHeightWidth()
-	{
+		var height = $("#chartwrap").height();
+		var width = $("#chartwrap").width();
 		var bbox = d3.select("#ex_chart")[0][0].getBoundingClientRect()
-		mainChartHeight = bbox.height;
-		mainChartWidth = bbox.width;
+		var bbox = d3.select("#boxes").node().getBBox();
+		var bHeight = bbox.height;
+		var bWidth = bbox.width;
+		//console.log(bbox)
+		//console.log(String(height) + " " + String(width))
+		d3.select("#yAxisLabels").selectAll("text").each(function(d,i)
+		{
+			//console.log(this)
+			//console.log(d)
+		})
+	})
+
+	
+	var slip = 0
+	function resize()
+	{
+		if (slip == 0)
+		{
+			d3.selectAll("#boxes path").attr("transform", "scale(1,0.7)")
+			d3.select("#yAxisLabels").attr("transform", "scale(1,0.7)")
+		}
+		else
+		{
+			d3.selectAll("#boxes path").attr("transform", "scale(1,1)")
+			d3.select("#yAxisLabels").attr("transform", "scale(1,1)")
+		}
+		
+		slip = 1 - slip;
+		
+		var bb = $("#boxes")[0].getScreenCTM();
+		var cc = d3.select("#boxes")[0][0].getCTM();
+		var bbox = d3.select("#boxes").node().getBBox();
+		console.log(bb)
 		console.log(bbox)
 	}
+	
 
 	function calcPointWidth()
 	{
 		var minWidth = 1;
 		var padding = 2.5;
-	    var width = timeAxis.width / curChart.phases.length
+	    var width = xAxis.width / curChart.phases.length
 		width = width < minWidth ? minWidth : width;
 		
 		if (width > 5) padding = 3.5;
@@ -250,15 +316,15 @@ var IDEX = (function(IDEX, $, undefined)
 		if (width > 20) padding = 10;
 		if (width > 100) padding = 20;
 		
-		timeAxis.xStep = width + padding;
-		timeAxis.pointWidth = width;
-		timeAxis.pointPadding = padding;
-		timeAxis.numPoints = Math.round(timeAxis.width / timeAxis.xStep);
-		//console.log(String(timeAxis.xStep) + "    " + String(timeAxis.width) + String(timeAxis.numPoints));
-		curChart.visiblePhases = curChart.phases.slice((curChart.phases.length ) - timeAxis.numPoints);
+		xAxis.xStep = width + padding;
+		xAxis.pointWidth = width;
+		xAxis.pointPadding = padding;
+		xAxis.numPoints = Math.round(xAxis.width / xAxis.xStep);
+		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
+		curChart.visiblePhases = curChart.phases.slice((curChart.phases.length ) - xAxis.numPoints);
 		
-		timeAxis.min = curChart.visiblePhases[0].startTime;
-		timeAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].endTime
+		xAxis.min = curChart.visiblePhases[0].startTime;
+		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].endTime
 		
 		console.log(curChart.visiblePhases)
 		
@@ -275,14 +341,14 @@ var IDEX = (function(IDEX, $, undefined)
 	    $("#volbars").empty();
 	    $("#axis").empty();
 
-		var xStart = timeAxis.left;
+		var xStart = xAxis.pos.left;
 		var xPos = xStart;
 		var phases = curChart.visiblePhases;
 		var phasesLength = phases.length;
 
 		console.log(curChart)
 		var a = Date.now()
-		console.log(timeAxis)
+		//console.log(xAxis)
 	    for (var i = 0; i < phasesLength; i++)
 		{
 			var phase = phases[i];
@@ -300,7 +366,7 @@ var IDEX = (function(IDEX, $, undefined)
 		    var topLeg = priceAxis.getPos(phase.high);
 			
 			var left = xPos;
-			var right = left + timeAxis.pointWidth;
+			var right = left + xAxis.pointWidth;
 			var xMiddle = (left + right) / 2;
 			
 			if (bottomBody - topBody < 1)
@@ -334,10 +400,10 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("width", xStep)
 			.attr("y", height-ht)
 			.attr("height", ht);*/
-		    xPos += timeAxis.xStep;
+		    xPos += xAxis.xStep;
 	    }
 		
-		console.log(Date.now() - a)	
+		//console.log(Date.now() - a)	
     }
 
 	
@@ -372,9 +438,9 @@ var IDEX = (function(IDEX, $, undefined)
 		var lastPrice = priceAxis.max;
 		var priceRange = lastPrice - firstPrice;
 		var priceInterval = priceRange / priceAxis.numTicks;
-		var yStart = priceAxis.bottom;
+		var yStart = priceAxis.pos.bottom;
 		var heightInterval = Math.round(priceAxis.height / priceAxis.numTicks);
-		var xPos = priceAxis.left + priceAxisPadding;
+		var xPos = priceAxis.pos.left + priceAxisPadding;
 		
 	    for (var i = 0; i < priceAxis.numTicks + 1; i++)
 	    {
@@ -403,17 +469,17 @@ var IDEX = (function(IDEX, $, undefined)
 		$("#xAxisLabels").empty();
 		var labels = [];
 		
-		var firstTick = timeAxis.min;
-		var lastTick = timeAxis.max;
+		var firstTick = xAxis.min;
+		var lastTick = xAxis.max;
 		var axisRange = lastTick - firstTick;
-		var tickInterval = axisRange / timeAxis.numTicks;
+		var tickInterval = axisRange / xAxis.numTicks;
 		
-		var xStart = timeAxis.left;
-		var xInterval = timeAxis.width / timeAxis.numTicks;
+		var xStart = xAxis.pos.left;
+		var xInterval = xAxis.width / xAxis.numTicks;
 		
-		var yPos = timeAxis.bottom;
+		var yPos = xAxis.pos.bottom;
 
-	    for(var i = 0; i < timeAxis.numTicks + 1; i++)
+	    for(var i = 0; i < xAxis.numTicks + 1; i++)
 	    {
 			var label = {};
 			//console.log(new Date(firstTick + (i * tickInterval)).toJSON())
@@ -463,12 +529,18 @@ var IDEX = (function(IDEX, $, undefined)
 	
 	
 	var iss = 0
-	$("h3").on("click", function()
+	$("#clickme").on("click", function()
 	{
 		if (iss == 0)
-			d3.selectAll("#boxes path").attr("transform", "scale(0.5,1)")
+		{
+			d3.selectAll("#boxes path").attr("transform", "scale(1,0.7)")
+			d3.select("#yAxisLabels").attr("transform", "scale(1,0.7)")
+		}
 		else
+		{
 			d3.selectAll("#boxes path").attr("transform", "scale(1,1)")
+			d3.select("#yAxisLabels").attr("transform", "scale(1,1)")
+		}
 		
 		iss = 1 - iss;
 		

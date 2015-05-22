@@ -1,3 +1,24 @@
+
+/*
+
+		timeAxis = new IDEX.Axis();
+		timeAxis.width = 900;
+		timeAxis.height = 50;
+		timeAxis.top = 650;
+		timeAxis.left = 10;
+		timeAxis.bottom = 700;
+		timeAxis.numTicks = 8;
+		
+		priceAxis = new IDEX.Axis()
+		priceAxis.height = 600;
+		priceAxis.width = 90;
+		priceAxis.bottom = 650;
+		priceAxis.top = 50;
+		priceAxis.left = 910;
+		priceAxis.numTicks = 6;
+		
+*/
+
 var IDEX = (function(IDEX, $, undefined) 
 {   
 	
@@ -6,12 +27,22 @@ var IDEX = (function(IDEX, $, undefined)
 		this.chart;
 		this.height = 0;
 		this.width = 0;
+		this.heightInit = "";
+		this.widthInit = "";
 		
-		this.top = 0;
-		this.left = 0;
-		this.bottom = 0;
-		this.right = 0;
-		this.padding = [];
+		this.pos = {
+			"top":0,
+			"bottom":0,
+			"left":0,
+			"right":0,
+		},
+			
+		this.padding = {
+			"top":0,
+			"bottom":0,
+			"left":0,
+			"right":0,
+		},
 		
 		this.dataMin = 0;
 		this.dataMax = 0;
@@ -27,12 +58,41 @@ var IDEX = (function(IDEX, $, undefined)
 		IDEX.constructFromObject(this, obj);
 	}
 	
+	IDEX.Axis.prototype.resize = function(val, hw)
+	{
+		var bbox = d3.select("#ex_chart")[0][0].getBoundingClientRect();
+		var wrapWidth = bbox.width;
+		var wrapHeight = bbox.height;
+		
+		convertedHeight = this.resizeHW(this.heightInit, wrapHeight);
+		convertedWidth = this.resizeHW(this.widthInit, wrapWidth);
+		
+		this.height = convertedHeight;
+		this.width = convertedWidth;
+	}
+	
+	IDEX.Axis.prototype.resizeHW = function(hw, wrapHW)
+	{
+		var strVal = String(hw);
+		var hasPct = strVal.indexOf('%') >= 0;
+		converted = hw
+		
+		if (hasPct)
+		{
+			var valNum = parseInt(strVal)/100			
+			var converted = Math.round(valNum * Number(wrapHW));
+		}
+		
+		return converted
+	}
+	
+	
 	IDEX.Axis.prototype.getPos = function(pointValue)
 	{
 		var num = pointValue - this.min;
 		var range = this.max - this.min;
 		var ratio = num / range;
-		var pos = Number((this.bottom - (ratio * this.height)).toFixed(4));
+		var pos = Number((this.pos.bottom - (ratio * this.height)).toFixed(4));
 		//console.log(String(pointValue) + "    " + String(ratio) + "  " + String(pos));
 		return pos
 	}
