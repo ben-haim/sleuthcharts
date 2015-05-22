@@ -294,11 +294,11 @@ var IDEX = (function(IDEX, $, undefined)
 		var bWidth = bbox.width;
 		//console.log(bbox)
 		//console.log(String(height) + " " + String(width))
-		d3.select("#yAxisLabels").selectAll("text").each(function(d,i)
+		/*d3.select("#boxes").selectAll("path").each(function(d,i)
 		{
-			//console.log(this)
-			//console.log(d)
-		})
+			console.log(this)
+			console.log(d)
+		})*/
 		
 		xAxis.resize()
 		priceAxis.resize()
@@ -387,6 +387,7 @@ var IDEX = (function(IDEX, $, undefined)
 		console.log(curChart)
 		var a = Date.now()
 		//console.log(xAxis)
+		var allPhases = []
 	    for (var i = 0; i < phasesLength; i++)
 		{
 			var phase = phases[i];
@@ -425,19 +426,18 @@ var IDEX = (function(IDEX, $, undefined)
 				"L", xMiddle, topLeg
 			]
 
-			d3.select("#boxes").append("path")
+			allPhases.push(phase)
+			
+			var box = d3.select("#boxes").selectAll("path")
+			.data(allPhases)
+			.enter()
+			.append("path")
 			.attr("d", d.join(" "))
 			.attr("fill", fillColor)
 			.attr("stroke", strokeColor)
 			.attr("stroke-width", "1")
 			.attr('shape-rendering', "crispEdges")
-
-			/*d3.select("#volbars").append("rect")
-			.attr("fill", "gray")
-			.attr("x", xPos)
-			.attr("width", xStep)
-			.attr("y", height-ht)
-			.attr("height", ht);*/
+			
 		    xPos += xAxis.xStep;
 	    }
 		
@@ -520,7 +520,10 @@ var IDEX = (function(IDEX, $, undefined)
 		SVGLabels.attr("x", function (d) { return d.x + 10})
 		.attr("y", function (d) { return d.y + 4})
 		.text(function (d) { return d.text })
-		.attr("fill", "white");
+		.attr("fill", "white")
+		.attr("fill", "#D3D3D3")
+		.attr("font-family", "Helvetica")
+		.attr("font-size", "13px")
 		
 		var SVGTicks = d3.select("#yAxisTicks").selectAll("line")
 		.data(ticks)
@@ -741,7 +744,7 @@ var IDEX = (function(IDEX, $, undefined)
 		var insideY = mouseY - offsetY
 
 		var height = xAxis.pos['bottom'];
-		var width = priceAxis.pos['left'] + priceAxis.width;
+		var width = priceAxis.pos['left']; //+ priceAxis.width
 		
 		//console.log(String(e.pageY) + "  " + String(offsetY));
 		
@@ -773,26 +776,31 @@ var IDEX = (function(IDEX, $, undefined)
 				time = Math.floor(time)
 				time = formatTimeDate(new Date(time))
 				
+				var formattedXPos = insideX - 55
+				
 				$("#cursor_follow_time")
 				.text(time)
-				.attr("y", xAxis.pos.bottom)
-				.attr("x", insideX)
-				.attr("fill", "white");
+				.attr("y", xAxis.pos.top + 15)
+				.attr("x", insideX - 37)
+				.attr("fill", "#D3D3D3")
+				.attr("font-family", "Helvetica")
+				.attr("font-size", "12px")
 				
 				var timerect = d3.select("#cursor_follow_time").node().getBBox();
 				d3.select("#backbox_time")
-				.attr("x", timerect.x)
-				.attr("y", timerect.y)
-				.attr("width", timerect.width)
-				.attr("height", timerect.height)
+				.attr("x", formattedXPos)
+				.attr("y", xAxis.pos.top)
+				.attr("width", 110)
+				.attr("height", xAxis.height)
 				.attr("fill", "black")
 				.attr("stroke", "white")
-				.attr("stroke-width", 1);
+				.attr("stroke-width", 0.5);
 			}
 			else
 			{
-				$("#cursor_follow_time").text(""); 
-				$("#backbox_time").attr("width", 0);
+				//$("#cursor_follow_time").text(""); 
+				//$("#backbox_time").attr("width", 0);
+				hideRenders()
 
 			}
 
@@ -807,7 +815,10 @@ var IDEX = (function(IDEX, $, undefined)
 				.text(price)
 				.attr("y", insideY + 5)
 				.attr("x", priceAxis.pos.left + 5)
-				.attr("fill", "white");
+				.attr("fill", "#D3D3D3")
+				.attr("font-family", "Helvetica")
+				.attr("font-size", "13px")
+
 				
 				var volrect = d3.select("#cursor_follow_price").node().getBBox();
 				d3.select("#backbox_price")
@@ -821,19 +832,15 @@ var IDEX = (function(IDEX, $, undefined)
 			}
 			else
 			{
-				$("#cursor_follow_price").text(""); 
-				$("#backbox_price").attr("width", 0);
+				hideRenders()
+				//$("#cursor_follow_price").text(""); 
+				//$("#backbox_price").attr("width", 0);
 			}
 
 		}
 		else
 		{
-			$("#cursor_follow_x").attr("stroke-width", 0);
-			$("#cursor_follow_y").attr("stroke-width", 0);
-			$("#cursor_follow_time").text("");
-			$("#cursor_follow_price").text(""); 
-			$("#backbox_time").attr("width", 0);
-			$("#backbox_price").attr("width", 0);
+			hideRenders();
 		}
 
 		if(isDragging)
@@ -852,6 +859,17 @@ var IDEX = (function(IDEX, $, undefined)
 			draw();
 		}
     });
+	
+	
+	function hideRenders()
+	{
+		$("#cursor_follow_x").attr("stroke-width", 0);
+		$("#cursor_follow_y").attr("stroke-width", 0);
+		$("#cursor_follow_time").text("");
+		$("#cursor_follow_price").text(""); 
+		$("#backbox_time").attr("width", 0);
+		$("#backbox_price").attr("width", 0);
+	}
 	
 
 	function convertNXTTime(timestamp)
