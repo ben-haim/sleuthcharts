@@ -454,21 +454,22 @@ var IDEX = (function(IDEX, $, undefined)
 		$("#yAxisLabels").empty();
 		
 		var priceLabels = [];
-		var priceAxisPadding = 0;
 		
-		var firstPrice = priceAxis.min;
-		var lastPrice = priceAxis.max;
-		var priceRange = lastPrice - firstPrice;
-		var priceInterval = priceRange / priceAxis.numTicks;
+		var firstTick = priceAxis.min;
+		var lastTick = priceAxis.max;
+		var axisRange = lastTick - firstTick;
+		
 		var yStart = priceAxis.pos.bottom;
-		var heightInterval = Math.round(priceAxis.height / priceAxis.numTicks);
-		var xPos = priceAxis.pos.left + priceAxisPadding;
+		var xPos = priceAxis.pos.left;
 		
-	    for (var i = 0; i < priceAxis.numTicks + 1; i++)
+		var priceInterval = axisRange / (priceAxis.numTicks - 1);
+		var heightInterval = Math.round(priceAxis.height / (priceAxis.numTicks - 1));
+		
+	    for (var i = 0; i < priceAxis.numTicks; i++)
 	    {
 			var priceLabel = {};
 
-			priceLabel.text = String(Math.round(firstPrice + (i * priceInterval)));
+			priceLabel.text = String(Math.round(firstTick + (i * priceInterval)));
 			priceLabel.y = yStart - (i * heightInterval);
 			priceLabel.x = xPos;
 			//console.log(priceLabel.y)
@@ -485,6 +486,20 @@ var IDEX = (function(IDEX, $, undefined)
 		.text(function (d) { return d.text })
 		.attr("fill", "white");
 	}
+	
+	
+	function getTickPositions(numTicks)
+	{
+	    for (var i = 0; i < xAxis.numTicks + 1; i++)
+	    {
+			var label = {};
+			//console.log(new Date(firstTick + (i * tickInterval)).toJSON())
+			label.text = firstTick + (i * tickInterval);
+			label.x = xStart + (i * xInterval);
+			label.y = yPos;
+			labels.push(label);
+	    }
+	}
 
 	function makeTimeAxisLabels()
 	{
@@ -494,22 +509,21 @@ var IDEX = (function(IDEX, $, undefined)
 		var firstTick = xAxis.min;
 		var lastTick = xAxis.max;
 		var axisRange = lastTick - firstTick;
-		var tickInterval = axisRange / xAxis.numTicks;
 		
 		var xStart = xAxis.pos.left;
-		var xInterval = xAxis.width / xAxis.numTicks;
-		
 		var yPos = xAxis.pos.bottom;
+		
+		var tickInterval = axisRange / (xAxis.numTicks - 1);
+		var xInterval = xAxis.width / (xAxis.numTicks - 1);
 
-	    for(var i = 0; i < xAxis.numTicks + 1; i++)
+	    for(var i = 0; i < xAxis.numTicks; i++)
 	    {
 			var label = {};
-			//console.log(new Date(firstTick + (i * tickInterval)).toJSON())
-			label.text = firstTick + (i * tickInterval);
+			label.text = formatTimeDate(new Date(firstTick + (i * tickInterval)))
+			//label.text = firstTick + (i * tickInterval);
 			label.x = xStart + (i * xInterval);
 			label.y = yPos;
 			labels.push(label);
-			
 	    }
 		
 		//var time = new Date((date + GENESIS_TIMESTAMP)*1000);
@@ -528,15 +542,18 @@ var IDEX = (function(IDEX, $, undefined)
 
 	function formatTimeDate(d)
 	{
-		console.log(d)
-		var month = d.getMonth()
+		var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "June",
+		  "July", "Aug", "Sept", "Oct", "Nov", "Dec"
+		];
+		//console.log(d)
+		var month = monthNames[d.getMonth()]
 		var day = d.getDate()
 		var hours = String(d.getHours())
 		var minutes = d.getMinutes()
 		
 		minutes = minutes < 10 ? "0"+String(minutes) : String(minutes)
 		
-		return month+":"+day
+		return month + ". " + day + " " + hours + ":" + minutes
 	}
 	
 	function formatTime(d)
@@ -629,9 +646,6 @@ var IDEX = (function(IDEX, $, undefined)
 			&& insideX > 0 && insideX < width)
 		{
 			
-			var xval = Math.floor(e.pageX - offsetX) + 0.5;
-			var yval = Math.floor(e.pageY - offsetY) + 0.5;
-			
 			$("#cursor_follow_x").attr("x1", 0)
 			.attr("x2", width)
 			.attr("y1", insideY + 0.5)
@@ -647,6 +661,26 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("stroke-width", 1)
 			.attr("stroke", "white");
 			
+			//console.log(price)
+			if (insideX > xAxis.padding.left && insideX < xAxis.width + xAxis.padding.left)
+			{
+				var insideTimeX = insideX - xAxis.padding.left;
+				var time = xAxis.getXVal(insideTimeX)
+				time = Math.floor(time)
+				time = formatTimeDate(new Date(time))
+				//console.log(price)
+				
+				$("#cursor_follow_time").attr("y", xAxis.pos.bottom).attr("x", insideX).text(time).attr({"fill":"white"});
+				var timerect = d3.select("#cursor_follow_time").node().getBBox();
+				d3.select("#backbox_time").attr("x", timerect.x).attr("y", timerect.y)
+				.attr("width", timerect.width).attr("height", timerect.height)
+				.attr("fill", "transparent")
+			}
+			else
+			{
+				$("#cursor_follow_time").text(""); 
+			}
+
 			
 			if (insideY > priceAxis.padding.top && insideY < priceAxis.pos.bottom)
 			{

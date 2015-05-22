@@ -106,6 +106,15 @@ var IDEX = (function(IDEX, $, undefined)
 		return price
 	}
 	
+	IDEX.Axis.prototype.getXVal = function(xPos)
+	{
+		var range = this.max - this.min;
+		var ratio = xPos / this.width;
+		var num = ratio * range;
+		num = this.min + num;
+		return num;
+	}
+	
 	
 	IDEX.Axis.prototype.makeLabels = function()
 	{
