@@ -4,11 +4,20 @@ var IDEX = (function(IDEX, $, undefined)
 	{
 		this.height = 0;
 		this.width = 0;
-		this.top = 0;
-		this.left = 0;
-		this.bottom = 0;
-		this.right = 0;
-		this.padding = [];
+
+		this.pos = {
+			"top":0,
+			"bottom":0,
+			"left":0,
+			"right":0,
+		},
+			
+		this.padding = {
+			"top":0,
+			"bottom":0,
+			"left":0,
+			"right":0,
+		},
 		
 		this.xAxis;
 		this.yAxis;

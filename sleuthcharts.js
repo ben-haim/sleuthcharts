@@ -188,6 +188,10 @@ var IDEX = (function(IDEX, $, undefined)
 			"chart":curChart,
 			"heightInit":50,
 			"widthInit":"90%",
+			"padding":{
+				"top":0,
+				"left":10,
+			},
 			
 			"numTicks":8,
 			"containerID":"xAxisLabels",
@@ -197,6 +201,11 @@ var IDEX = (function(IDEX, $, undefined)
 			"chart":curChart,
 			"heightInit":"60%",
 			"widthInit":50,
+			
+			"padding":{
+				"top":50,
+				"left":10,
+			},
 			
 			"numTicks":6,
 			"containerID":"yAxisLabels",
@@ -216,12 +225,13 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		candleSeries.height = candleSeries.yAxis.height;
 		candleSeries.width = candleSeries.xAxis.width;
+		candleSeries.pos['left'] = candleSeries.xAxis.pos['left'];
+
+		priceAxis.pos['bottom'] = priceAxis.height + priceAxis.padding['top'];
+		priceAxis.pos['left'] = candleSeries.width + candleSeries.pos['left'] + priceAxis.padding['left'];
 		
-		priceAxis.pos['left'] = candleSeries.width;
-		priceAxis.pos['bottom'] = priceAxis.height;
-		
-		xAxis.pos['left'] = 10;
-		xAxis.pos['bottom'] = candleSeries.height + xAxis.height;
+		xAxis.pos['left'] = xAxis.padding['left'];
+		xAxis.pos['bottom'] = priceAxis.padding['top'] + candleSeries.height + xAxis.height + xAxis.padding['top'];
 		
 		console.log(xAxis)
 		console.log(priceAxis)
@@ -277,6 +287,17 @@ var IDEX = (function(IDEX, $, undefined)
 			//console.log(this)
 			//console.log(d)
 		})
+		
+		xAxis.resize()
+		priceAxis.resize()
+		
+		priceAxis.pos['bottom'] = priceAxis.height + priceAxis.padding['top'];
+		priceAxis.pos['left'] = xAxis.width + xAxis.pos['left'] + priceAxis.padding['left'];
+		
+		xAxis.pos['left'] = xAxis.padding['left'];
+		xAxis.pos['bottom'] = priceAxis.padding['top'] + priceAxis.height + xAxis.height + xAxis.padding['top'];
+		
+		redraw()
 	})
 
 	
@@ -307,30 +328,31 @@ var IDEX = (function(IDEX, $, undefined)
 	function calcPointWidth()
 	{
 		var minWidth = 1;
-		var padding = 2.5;
-	    var width = xAxis.width / curChart.phases.length
+		var padding = 1.5;
+	    var width = Math.floor(xAxis.width / curChart.phases.length)
 		width = width < minWidth ? minWidth : width;
-		
-		if (width > 5) padding = 3.5;
-		if (width > 10) padding = 5;
-		if (width > 20) padding = 10;
-		if (width > 100) padding = 20;
+		if (width > 3) padding = 2;
+		if (width >= 5) padding = 3.5;
+		if (width >= 10) padding = 5;
+		if (width >= 20) padding = 10;
+		if (width >= 100) padding = 20;
 		
 		xAxis.xStep = width + padding;
 		xAxis.pointWidth = width;
 		xAxis.pointPadding = padding;
-		xAxis.numPoints = Math.round(xAxis.width / xAxis.xStep);
+		xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
 		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
 		curChart.visiblePhases = curChart.phases.slice((curChart.phases.length ) - xAxis.numPoints);
 		
 		xAxis.min = curChart.visiblePhases[0].startTime;
 		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].endTime
 		
-		console.log(curChart.visiblePhases)
+		//console.log(curChart.visiblePhases)
 		
 		var priceMinMax = getMinMax(curChart.visiblePhases)
 		priceAxis.min = priceMinMax[1]
 		priceAxis.max = priceMinMax[0]
+		console.log(width)
 
 	}
 
@@ -368,7 +390,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var left = xPos;
 			var right = left + xAxis.pointWidth;
 			var xMiddle = (left + right) / 2;
-			
+			//console.log(String(left) + " " + String(right) + " " + String(xMiddle))
 			if (bottomBody - topBody < 1)
 			{
 				bottomBody += 0.5;
@@ -588,46 +610,62 @@ var IDEX = (function(IDEX, $, undefined)
 
     $(document).on("mousemove", function(e)
     {
-		offsetX = $("#ex_chart").offset().left;
-		offsetY = $("#ex_chart").offset().top;
-		var width = 1000;
-		var xscales = 100;
-		var height = 700;
-		var scale = 0;
-		var volscale = 0;
+		if (!xAxis)
+			return
+		
+		var mouseX = e.pageX
+		var mouseY = e.pageY
+		var offsetX = $("#ex_chart").offset().left;
+		var offsetY = $("#ex_chart").offset().top;
+		var insideX = mouseX - offsetX
+		var insideY = mouseY - offsetY
+
+		var height = xAxis.pos['bottom'];
+		var width = priceAxis.pos['left'] + priceAxis.width;
 		
 		//console.log(String(e.pageY) + "  " + String(offsetY));
 		
-		if(e.pageY - offsetY > 0 && e.pageY - offsetY < height && e.pageX - offsetX > 0 && e.pageX - offsetX < 1200)
+		if ( insideY > 0 && insideY < height 
+			&& insideX > 0 && insideX < width)
 		{
+			
 			var xval = Math.floor(e.pageX - offsetX) + 0.5;
 			var yval = Math.floor(e.pageY - offsetY) + 0.5;
 			
 			$("#cursor_follow_x").attr("x1", 0)
 			.attr("x2", width)
-			.attr("y1", yval)
-			.attr("y2", yval)
+			.attr("y1", insideY + 0.5)
+			.attr("y2", insideY + 0.5)
 			.attr("stroke-width", 1)
 			.attr("stroke", "white");
 
 			$("#cursor_follow_y")
 			.attr("y1", 0)
 			.attr("y2", height)
-			.attr("x1", xval)
-			.attr("x2", xval)
+			.attr("x1", insideX + 0.5)
+			.attr("x2", insideX + 0.5)
 			.attr("stroke-width", 1)
 			.attr("stroke", "white");
-
 			
-			var pc = (height-yval)/scale+0;
-			pc = Math.round(pc * Math.pow(10, -Math.floor(Math.log10(pc)-2)))/Math.pow(10, -Math.floor(Math.log10(pc)-2));
-
-			$("#cursor_follow_price").attr("y", yval-2).attr("x", width+xscales+10).text(pc);
 			
-			var volrect = d3.select("#cursor_follow_price").node().getBBox();
-			d3.select("#backbox_price").attr("x", volrect.x).attr("y", volrect.y)
-			.attr("width", volrect.width).attr("height", volrect.height)
-			.attr("fill", "white")
+			if (insideY > priceAxis.padding.top && insideY < priceAxis.pos.bottom)
+			{
+				var insidePriceY = insideY - priceAxis.padding.top;
+				var price = priceAxis.getPriceFromY(insidePriceY)
+				price = price.toFixed(2)
+				//console.log(price)
+				
+				$("#cursor_follow_price").attr("y", insideY).attr("x", priceAxis.pos.left).text(price).attr({"fill":"white"});
+				var volrect = d3.select("#cursor_follow_price").node().getBBox();
+				d3.select("#backbox_price").attr("x", volrect.x).attr("y", volrect.y)
+				.attr("width", volrect.width).attr("height", volrect.height)
+				.attr("fill", "transparent")
+			}
+			else
+			{
+				$("#cursor_follow_price").text(""); 
+			}
+
 		}
 		else
 		{
