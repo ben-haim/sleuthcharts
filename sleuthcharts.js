@@ -8,16 +8,57 @@ var IDEX = (function(IDEX, $, undefined)
 	var volumeAxis;
 
     var isDragging = false;
-	
-	
-	
-	
+	var skynetKeysTick = [2,3,4,5,6]
+	var skynetKeys = [3,4,5,6,7]
+
     IDEX.init = function()
     {
 		curChart = new IDEX.Chart();
     }
 	
+	IDEX.SkyNETParams = function(obj) 
+	{
+		this.baseurl = "http://api.finhive.com/v1.0/run.cgi?";
+		this.key = "9cf373ead4858e19bf93ae5ea238c4c796819cc883c877513f528b95721a1085";
+		this.section = "";
+		this.run = "";
+		this.mode = "";
+		this.exchg = "";
+		this.pair = "";
+		this.num = "";
+		this.bars = "";
+        this.len = "";
+		
+		IDEX.constructFromObject(this, obj);
+	}
 
+    IDEX.SkyNETParams.prototype.makeURL = function()
+    {
+        var arr = []
+        for (key in this)
+        {
+            if (this.hasOwnProperty(key))
+                if (key != "baseurl")
+                    arr.push(key+"="+this[key])
+        }
+        var s = arr.join("&")
+
+        return this.baseurl+s
+    }
+
+	IDEX.OHLC = function(obj) 
+	{
+		var __construct = function(that) 
+		{
+			that.startTime = obj[0]
+			that.endTime = obj[1]
+			that.open = obj[2]
+			that.high = obj[3]
+			that.low = obj[4]
+			that.close = obj[5]
+		}(this)
+	}
+	
 	IDEX.phaseData = function(obj) 
 	{
 		this.startTime = 0;
@@ -68,82 +109,127 @@ var IDEX = (function(IDEX, $, undefined)
 		IDEX.constructFromObject(this, obj);
 	}
 	
-	IDEX.Axis = function(obj) 
+	function getData(options, len)
 	{
-		this.height = 0;
-		this.width = 0;
+		var dfd = new $.Deferred();
+		var id = "15344649963748848799"
 		
-		this.top = 0;
-		this.left = 0;
-		this.bottom = 0;
-		this.right = 0;
-		this.padding = [];
-		
-		this.dataMin = 0;
-		this.dataMax = 0;
-		this.min = 0;
-		this.max = 0;
-		
-		this.numTicks = 0;
-		this.tickInterval = 0;
-		
-		this.labels = [];
-		this.tickPositions = [];
+        var obj = {}
+        obj['section'] = "crypto";
+        obj['run'] = "quotes";
+        obj['mode'] = "bars";
+        obj['exchg'] = "nxtae";
+        obj['pair'] = id+"_NXT";
+        obj['num'] = "400"
+        obj['bars'] = "tick"
+        obj['len'] = len
+        var params = new IDEX.SkyNETParams(obj)
+        var url = params.makeURL()
 
-		IDEX.constructFromObject(this, obj);
+		$.getJSON(url, function(data)
+		{
+			dfd.resolve(data)	
+		})
+		
+		return dfd.promise()
 	}
 	
-	IDEX.Axis.prototype.getPos = function(pointValue)
+	function getStepOHLC(data)
 	{
-		var ratio = pointValue / curChart.maxPrice;
-		var pos = Number((this.bottom - (ratio * this.height)).toFixed(4))
-		//console.log(String(pointValue) + "    " + String(ratio) + "  " + String(pos));
-		return pos
+		var ohlc = []
+		var volume = []
+		var dataLength = data.length
+		var keys = skynetKeys
+		var baseNXT = false
+		
+		for (var i = 0; i < dataLength; i++) 
+		{
+			var pointDate = data[i][0]*1000;
+			var endTime = data[i][1]*1000;
+			var open = data[i][keys[0]]
+			var high = data[i][keys[1]]
+			var low = data[i][keys[2]]
+			var close = data[i][keys[3]]
+			var volu = data[i][keys[4]]
+			
+			if (baseNXT)
+			{
+				data[i][keys[0]] =  Number((1 / close).toFixed(6))
+				data[i][keys[1]] =  Number((1 / low).toFixed(6))
+				data[i][keys[2]] =  Number((1 / high).toFixed(6))
+				data[i][keys[3]] =  Number((1 / open).toFixed(6))
+				data[i][keys[4]] =  Number((close * volu).toFixed(6))
+
+				data[i] = ((i!= 0) && (data[i][keys[2]] < data[i-1][keys[2]]/5)) ? data[i-1] : data[i] // spike
+			}
+			else
+			{
+				data[i] = ((i!= 0) && (data[i][keys[1]] > data[i-1][keys[1]]*5)) ? data[i-1] : data[i] // spike
+			}
+			
+			ohlc.push(new IDEX.OHLC([pointDate, endTime, open, high, low, close]))
+			volume.push({x:pointDate, y:volu});
+		}
+
+		return [ohlc, volume]
 	}
-	
 	
     $("input[name=time_width]").change(function()
     {
 	    updateChart();
     });
 	
+	function makeChart()
+	{
+		curChart = new IDEX.Chart();
+		timeAxis = new IDEX.Axis();
+		timeAxis.width = 900;
+		timeAxis.height = 50;
+		timeAxis.top = 650;
+		timeAxis.left = 10;
+		timeAxis.bottom = 700;
+		timeAxis.numTicks = 8;
+		priceAxis = new IDEX.Axis()
+		priceAxis.height = 600;
+		priceAxis.width = 90;
+		priceAxis.bottom = 650;
+		priceAxis.top = 50;
+		priceAxis.left = 910;
+		priceAxis.numTicks = 6;
+	}
 	
 	function updateChart()
 	{
-        var params = {"requestType":"getTrades","asset":"17554243582654188572"};
+        var params = {"requestType":"getTrades","asset":"15344649963748848799"};
+		var barWidth = Number($("input[name=time_width]:checked").val());
 		
-        sendAjax(params).done(function(data)
-        {
-			curChart = new IDEX.Chart();
-			timeAxis = new IDEX.Axis();
-			timeAxis.width = 900;
-			timeAxis.height = 50;
-			timeAxis.top = 650;
-			timeAxis.left = 10;
-			timeAxis.bottom = 700;
-			timeAxis.numTicks = 8;
-			priceAxis = new IDEX.Axis()
-			priceAxis.height = 600;
-			priceAxis.width = 90;
-			priceAxis.bottom = 650;
-			priceAxis.top = 50;
-			priceAxis.left = 910;
-			priceAxis.numTicks = 6;
+		getData({}, barWidth).done(function(data)
+		{
+			console.log(data)
+			var both = getStepOHLC(data.results);
+			var ohlc = both[0]
+			var vol = both[1]
+			console.log(both)
+			console.log(data)
+			makeChart()
 			//updateHeightWidth();
 			
-			curChart.barWidth = Number($("input[name=time_width]:checked").val());
-			curChart.tradeData = data.trades;
-			
-			formatChartData();
-			groupData();
-			getPhaseData();
+			curChart.barWidth = barWidth
+			curChart.phases = ohlc
+
 			calcPointWidth();
 			drawCandleSticks();
 			makePriceAxisLabels();
 			makeTimeAxisLabels();
-        })
+		})
 	}
 
+	$(window).resize(function()
+	{
+		var height = $("#chartWrap").height();
+		var width = $("#chartWrap").width();
+	})
+	
 	function updateHeightWidth()
 	{
 		var bbox = d3.select("#ex_chart")[0][0].getBoundingClientRect()
@@ -167,126 +253,19 @@ var IDEX = (function(IDEX, $, undefined)
 		timeAxis.xStep = width + padding;
 		timeAxis.pointWidth = width;
 		timeAxis.pointPadding = padding;
-		timeAxis.numPoints = timeAxis.width / timeAxis.xStep;
+		timeAxis.numPoints = Math.round(timeAxis.width / timeAxis.xStep);
 		//console.log(String(timeAxis.xStep) + "    " + String(timeAxis.width) + String(timeAxis.numPoints));
-		curChart.visiblePhases = curChart.phases.slice((curChart.phases.length - 1) - timeAxis.numPoints);
-		timeAxis.min = curChart.visiblePhases[0].timestamp;
-		timeAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1]
-
-	}
-	
-	function formatChartData()
-	{
-		curChart.startTime = convertNXTTime(curChart.tradeData[curChart.tradeData.length-1].timestamp)
-		curChart.endTime = Math.floor(Date.now() / 1000);
-		curChart.maxTimespan = curChart.endTime - curChart.startTime;
-		curChart.visibleTimespan = (curChart.visibleTimespan == 0) ? curChart.maxTimespan : curChart.visibleTimespan
-		curChart.numBars = Math.round(curChart.maxTimespan / curChart.barWidth);
-	}
-	
-
-	function groupData()
-	{
-		var phase = new IDEX.phaseData();
-		var len = curChart.tradeData.length;
-		var phaseEnd = curChart.startTime + curChart.barWidth;
-		curChart.tradeData.reverse();
-
-	    for (var i = 0; i < len; i++)
-	    {
-		    var trade = curChart.tradeData[i];
-			var timestamp = convertNXTTime(trade.timestamp)
-			//console.log(String(phaseEnd) + "  " + String(trade.timestamp))
-
-			trade.price = trade.priceNQT/Math.pow(10, 8 - trade.decimals);
-			trade.quantity = trade.quantityQNT/Math.pow(10, trade.decimals);
-			
-
-			if (timestamp <= phaseEnd)
-			{
-				trade.timestamp = timestamp
-				phase.trades.push(trade)
-				continue;
-			}
-			else
-			{
-
-				phase.startTime = phaseEnd - curChart.barWidth;
-				phase.endTime = phaseEnd;
-				curChart.phases.push(phase)
-				phase = new IDEX.phaseData()
-				phaseEnd += curChart.barWidth;
-				i--;
-			}
-	    }
-		//curChart.phases = phases;
-	}
-	
-	function getPhaseData()
-	{
-		var allPhasesLength = curChart.phases.length;
-	    //var minChange = -1;
-		//var maxChange = -1;
-	    //var minAveragePrice = -1;
-		//var maxAveragePrice = -1;
-		//var prevAverage = 0;
-		var maxPrice = -1;
-		var minPrice = -1;
-		var maxVol = 0;
+		curChart.visiblePhases = curChart.phases.slice((curChart.phases.length ) - timeAxis.numPoints);
 		
-	    for (var i = 0; i < allPhasesLength; i++)
-	    {
-			var phase = curChart.phases[i];
-			var phaseTradesLength = phase.trades.length;
-			//var averagePrice = -1;
-
-			for (var j = 0; j < phaseTradesLength; j++)
-			{
-				var phaseTrade = phase.trades[j];
-				var price = phaseTrade.price;
-				var quantity = phaseTrade.quantity;
-				
-				phase.open = j == 0 ? price : phase.open;
-				phase.high = price > phase.high ? price : phase.high;
-				phase.low = (price < phase.low || j == 0) ? price : phase.low;
-				phase.close = (j == phaseTradesLength - 1) ? price : phase.close
-				phase.volume += quantity*price;
-				//averagePrice += price
-			}
-			if (!phaseTradesLength)
-			{
-				phase.open = phase.high = phase.low = phase.close = curChart.phases[i-1].close;
-				phase.empty = true;
-			}
-			
-			//averagePrice = averagePrice == -1 ? prevAverage : averagePrice;
-			//averagePrice = averagePrice == 0 ? averagePrice : averagePrice / phaseTradesLength
-			
-			//minAveragePrice = minAveragePrice == -1 || averagePrice < minAveragePrice ? averagePrice : minAveragePrice
-			//maxAveragePrice = maxAveragePrice == -1 || averagePrice > maxAveragePrice ? averagePrice : maxAveragePrice
-			
-			minPrice = (phase.low < minPrice || minPrice == -1) ? phase.low : minPrice;
-			maxPrice = phase.high > maxPrice ? phase.high : maxPrice;
-			maxVol = phase.totalVolume > maxVol ? phase.totalVolume : maxVol;
-
-			//var change = (Math.round(((averagePrice/prevAverage)-1)*100)/100)*100
-
-		    //var change = prevAverage == 0 ? 0 : averagePrice - prevAverage;
-			//minChange = (change < minChange || change == -1) ? change : minChange;
-			//maxChange = (change > maxChange || change == -1) ? change : maxChange;
-			
-			//phase.change = change;
-		    //prevAverage = averagePrice;
-			//phase.averagePrice = averagePrice
-		}
+		timeAxis.min = curChart.visiblePhases[0].startTime;
+		timeAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].endTime
 		
-		curChart.maxVol = maxVol;
-		curChart.maxPrice = maxPrice;
-		curChart.minPrice = minPrice;
-		//curChart.maxAveragePrice = maxAveragePrice;
-		//curChart.minAveragePrice = minAveragePrice;
-		//curChart.maxChange = maxChange;
-		//curChart.minChange = minChange;
+		console.log(curChart.visiblePhases)
+		
+		var priceMinMax = getMinMax(curChart.visiblePhases)
+		priceAxis.min = priceMinMax[1]
+		priceAxis.max = priceMinMax[0]
+
 	}
 
 
@@ -362,12 +341,6 @@ var IDEX = (function(IDEX, $, undefined)
     }
 
 	
-	function getLabelByStep(start, end, numLabels )
-	{
-		
-		
-	}
-	
 	function getMinMax(phases)
 	{
 		var high = 0;
@@ -395,24 +368,22 @@ var IDEX = (function(IDEX, $, undefined)
 		var priceLabels = [];
 		var priceAxisPadding = 0;
 		
-		var both = getMinMax(curChart.visiblePhases)
-		var firstPrice = both[1];
-		var lastPrice = both[0];
+		var firstPrice = priceAxis.min;
+		var lastPrice = priceAxis.max;
 		var priceRange = lastPrice - firstPrice;
 		var priceInterval = priceRange / priceAxis.numTicks;
-		
-		var yStart = priceAxis.height;
-		var heightInterval = priceAxis.height / priceAxis.numTicks;
-		
+		var yStart = priceAxis.bottom;
+		var heightInterval = Math.round(priceAxis.height / priceAxis.numTicks);
 		var xPos = priceAxis.left + priceAxisPadding;
 		
-	    for (var i = 0; i < priceAxis.numTicks; i++)
+	    for (var i = 0; i < priceAxis.numTicks + 1; i++)
 	    {
 			var priceLabel = {};
 
-			priceLabel.text = String(firstPrice + (i * priceInterval));
+			priceLabel.text = String(Math.round(firstPrice + (i * priceInterval)));
 			priceLabel.y = yStart - (i * heightInterval);
 			priceLabel.x = xPos;
+			//console.log(priceLabel.y)
 			priceLabels.push(priceLabel);
 		}
 
@@ -432,12 +403,12 @@ var IDEX = (function(IDEX, $, undefined)
 		$("#xAxisLabels").empty();
 		var labels = [];
 		
-		var firstTick = curChart.startTime;
-		var lastTick = curChart.endTime;
+		var firstTick = timeAxis.min;
+		var lastTick = timeAxis.max;
 		var axisRange = lastTick - firstTick;
 		var tickInterval = axisRange / timeAxis.numTicks;
 		
-		var xStart = 0;
+		var xStart = timeAxis.left;
 		var xInterval = timeAxis.width / timeAxis.numTicks;
 		
 		var yPos = timeAxis.bottom;
@@ -445,11 +416,12 @@ var IDEX = (function(IDEX, $, undefined)
 	    for(var i = 0; i < timeAxis.numTicks + 1; i++)
 	    {
 			var label = {};
-			
+			//console.log(new Date(firstTick + (i * tickInterval)).toJSON())
 			label.text = firstTick + (i * tickInterval);
 			label.x = xStart + (i * xInterval);
 			label.y = yPos;
 			labels.push(label);
+			
 	    }
 		
 		//var time = new Date((date + GENESIS_TIMESTAMP)*1000);
@@ -466,6 +438,18 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("fill", "white");
 	}
 
+	function formatTimeDate(d)
+	{
+		console.log(d)
+		var month = d.getMonth()
+		var day = d.getDate()
+		var hours = String(d.getHours())
+		var minutes = d.getMinutes()
+		
+		minutes = minutes < 10 ? "0"+String(minutes) : String(minutes)
+		
+		return month+":"+day
+	}
 	
 	function formatTime(d)
 	{
@@ -477,23 +461,6 @@ var IDEX = (function(IDEX, $, undefined)
 		return hours+":"+minutes
 	}
 	
-	
-	function makeVolumeAxisLabels()
-	{
-		/*var volLabels = [];
-		
-		var firstVol = 0;
-		var lastVol = curChart.maxVol;
-		var volRange = lastVol - firstVol;
-		var priceInterval = priceRange / numPriceAxisTicks;
-		
-		d3.select("#axis").append("text")
-		.attr("id", "price_"+id)
-		.attr("x", width+xscales+10)
-		.attr("y", axisy-2)
-		.text(priceText)
-		.attr("fill", "white");*/
-	}
 	
 	var iss = 0
 	$("h3").on("click", function()
@@ -521,7 +488,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 	    if(yval > 650 && yval < 0 && xval > 0 && xval < 1200)
 	    {
-		    var timespan =  $("input[name=time_span]:checked").val();
+		    var timespan = $("input[name=time_span]:checked").val();
 		    if(timespan == 0) timespan = getNxtTime() - first;
 		    var chwidth = timespan/(getNxtTime()-first)*1200;
 		    if(xval < scrollpos && xval > scrollpos-chwidth && getNxtTime()-first > timespan)
@@ -532,6 +499,20 @@ var IDEX = (function(IDEX, $, undefined)
 	    }
     })
 
+	
+	function isInside(e)
+	{
+		var offset = $("#ex_chart").offset()
+		var x = eX - chart.plotLeft - offset.left;
+		var y = eY - chart.plotTop - offset.top;
+		
+		return chart.isInsidePlot(x, y);
+		//var isInsideY = 
+		
+		//if(e.pageY - offsetY > 0 && e.pageY - offsetY <= height && e.pageX - offsetX > 0 && e.pageX - offsetX < 1200)
+
+	}
+
 
     $(document).on("mousemove", function(e)
     {
@@ -539,16 +520,19 @@ var IDEX = (function(IDEX, $, undefined)
 		offsetY = $("#ex_chart").offset().top;
 		var width = 1000;
 		var xscales = 100;
-		var height = 600;
+		var height = 700;
 		var scale = 0;
 		var volscale = 0;
-		if(e.pageY-offsetY > 0 && e.pageY-offsetY < height && e.pageX-offsetX > 0 && e.pageX-offsetX < 1200)
+		
+		//console.log(String(e.pageY) + "  " + String(offsetY));
+		
+		if(e.pageY - offsetY > 0 && e.pageY - offsetY < height && e.pageX - offsetX > 0 && e.pageX - offsetX < 1200)
 		{
-			var xval = Math.floor(e.pageX-offsetX)+0.5;
-			var yval = Math.floor(e.pageY-offsetY)+0.5;
+			var xval = Math.floor(e.pageX - offsetX) + 0.5;
+			var yval = Math.floor(e.pageY - offsetY) + 0.5;
 			
 			$("#cursor_follow_x").attr("x1", 0)
-			.attr("x2", width+(xscales*2))
+			.attr("x2", width)
 			.attr("y1", yval)
 			.attr("y2", yval)
 			.attr("stroke-width", 1)
@@ -556,30 +540,17 @@ var IDEX = (function(IDEX, $, undefined)
 
 			$("#cursor_follow_y")
 			.attr("y1", 0)
-			.attr("y2", height+50)
+			.attr("y2", height)
 			.attr("x1", xval)
 			.attr("x2", xval)
 			.attr("stroke-width", 1)
 			.attr("stroke", "white");
 
-
-			var vol = (height-yval)/volscale;
-			vol = Math.round(vol * Math.pow(10, -Math.floor(Math.log10(vol)-2)))/Math.pow(10, -Math.floor(Math.log10(vol)-2));
-
-			$("#cursor_follow_vol")
-			.attr("y", yval-2)
-			.attr("x", 10)
-			.text(vol);
 			
 			var pc = (height-yval)/scale+0;
 			pc = Math.round(pc * Math.pow(10, -Math.floor(Math.log10(pc)-2)))/Math.pow(10, -Math.floor(Math.log10(pc)-2));
 
 			$("#cursor_follow_price").attr("y", yval-2).attr("x", width+xscales+10).text(pc);
-
-			var volrect = d3.select("#cursor_follow_vol").node().getBBox();
-			d3.select("#backbox_vol").attr("x", volrect.x).attr("y", volrect.y)
-			.attr("width", volrect.width).attr("height", volrect.height)
-			.attr("fill", "white");
 			
 			var volrect = d3.select("#cursor_follow_price").node().getBBox();
 			d3.select("#backbox_price").attr("x", volrect.x).attr("y", volrect.y)
@@ -667,84 +638,6 @@ var IDEX = (function(IDEX, $, undefined)
 	{
 	    isDragging = false;
     })
-	
-
-/*
-
-
-function setChange(id, posx, width, amount)
-	{
-		if (amount > 0)
-		{
-			d3.select("#bottom_scroll").append("rect").attr("id", id)
-			.attr("x", Math.floor(posx + (width/2))+0.5).attr("width", width)
-			.attr("y", 700.5).attr("height", Math.round(amount))
-			.attr("fill", "red").attr("stroke", "black");
-		}
-		else
-		{
-			d3.select("#bottom_scroll").append("rect").attr("id", "ch_"+id)
-			.attr("x", Math.floor(posx + (width/2))+0.5).attr("width", Math.round(width))
-			.attr("y", 700.5-Math.round(-amount)).attr("height", Math.round(-amount))
-			.attr("fill", "green").attr("stroke", "black");
-		}
-	}
-
-
-	function addScrollChartRenders()
-	{
-		var show = (curChart.visibleTimeSpan/curChart.maxTimeSpan)*1200;
-		$("#bottom_scroll").empty();
-			
-	    d3.select("#bottom_scroll").append("rect")
-        .attr("id","scroll")
-	    .attr("x", 1200-show)
-        .attr("width", show)
-	    .attr("y", 650)
-        .attr("height", 100)
-        .attr("fill", "lightgray");
-
-	    d3.select("#bottom_scroll").append("line")
-        .attr("id", "centerline")
-	    .attr("x1", 0)
-        .attr("x2", (width+(xscales*2)))
-	    .attr("y1", 700.5)
-        .attr("y2", 700.5)
-	    .attr("stroke", "black");
-	}
-
-
-    function adjustScrollChart()
-    {	
-		var maxAvg = curChart.maxAveragePrice;
-		var minAvg = curChart.minAveragePrice;
-		var maxChange = curChart.maxChange;
-		var minChange = curChart.minChange;
-		var firstAvg = curChart.phases[0].averagePrice;
-		
-	    var changeWidth = 1200 / curChart.numBars;
-	    var changeScale = (maxChange > (-minChange) ? 50 / maxChange : 50 / (-minChange)) * 0.95;
-		
-	    var fst = Math.round(653 + (94 - (firstAvg - minAvg) / (maxAvg - minAvg)*94));
-	    var m = "M0 " + fst + " L" + Math.round(changeWidth / 2) + " " + fst + " ";
-
-		var allPhasesLength = curChart.phases.length;
-		
-	    for (var i = 0; i < allPhasesLength; i++)
-	    {
-			var change = curChart.phases[i].change;
-			var average = curChart.phases[i].averagePrice;
-		    var b = (average - minAvg) / (maxAvg - minAvg) * 94;
-			
-		    setChange(i, (changeWidth * i) - (changeWidth / 2), (changeWidth / 4) * 3, changeScale * change);
-		    m += "L" + Math.round(changeWidth * i + (changeWidth / 2)) + " " + Math.round(653 + (94 - b)) + " ";
-	    }
-
-	    d3.select("#bottom_scroll").append("path").attr("id", "bottom_path").attr("stroke", "white").attr("fill", "none").attr("stroke-width", 2);
-	    d3.select("#bottom_path").attr("d", m);
-    }
-	
-*/
 	
 	
 	
