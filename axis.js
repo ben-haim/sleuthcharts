@@ -51,6 +51,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		this.numTicks = 0;
 		this.tickInterval = 0;
+		this.tickLength = 0;
 		
 		this.labels = [];
 		this.tickPositions = [];

@@ -186,14 +186,16 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		var xAxisOpt = {
 			"chart":curChart,
-			"heightInit":50,
+			"heightInit":25,
 			"widthInit":"90%",
+			
 			"padding":{
-				"top":0,
+				"top":50,
 				"left":10,
 			},
 			
 			"numTicks":8,
+			"tickLength":7,
 			"containerID":"xAxisLabels",
 			"isXAxis":true,
 		}
@@ -204,10 +206,11 @@ var IDEX = (function(IDEX, $, undefined)
 			
 			"padding":{
 				"top":50,
-				"left":10,
+				"left":20,
 			},
 			
 			"numTicks":6,
+			"tickLength":7,
 			"containerID":"yAxisLabels",
 		}
 		
@@ -227,11 +230,15 @@ var IDEX = (function(IDEX, $, undefined)
 		candleSeries.width = candleSeries.xAxis.width;
 		candleSeries.pos['left'] = candleSeries.xAxis.pos['left'];
 
-		priceAxis.pos['bottom'] = priceAxis.height + priceAxis.padding['top'];
-		priceAxis.pos['left'] = candleSeries.width + candleSeries.pos['left'] + priceAxis.padding['left'];
+		priceAxis.pos['top'] = priceAxis.padding['top'];
+		priceAxis.pos['bottom'] = priceAxis.pos['top'] + priceAxis.height;
+		priceAxis.pos['left'] = xAxis.pos['left'] + xAxis.width + priceAxis.padding['left'];
+		priceAxis.pos['right'] = priceAxis.pos['left'] + priceAxis.width;
 		
+		xAxis.pos['top'] = priceAxis.padding['top'] + priceAxis.height + xAxis.padding['top'];
+		xAxis.pos['bottom'] = xAxis.pos['top'] + xAxis.height;
 		xAxis.pos['left'] = xAxis.padding['left'];
-		xAxis.pos['bottom'] = priceAxis.padding['top'] + candleSeries.height + xAxis.height + xAxis.padding['top'];
+		xAxis.pos['right'] = xAxis.pos['left'] + xAxis.width;
 		
 		console.log(xAxis)
 		console.log(priceAxis)
@@ -291,11 +298,15 @@ var IDEX = (function(IDEX, $, undefined)
 		xAxis.resize()
 		priceAxis.resize()
 		
-		priceAxis.pos['bottom'] = priceAxis.height + priceAxis.padding['top'];
-		priceAxis.pos['left'] = xAxis.width + xAxis.pos['left'] + priceAxis.padding['left'];
+		priceAxis.pos['top'] = priceAxis.padding['top'];
+		priceAxis.pos['bottom'] = priceAxis.pos['top'] + priceAxis.height;
+		priceAxis.pos['left'] = xAxis.pos['left'] + xAxis.width + priceAxis.padding['left'];
+		priceAxis.pos['right'] = priceAxis.pos['left'] + priceAxis.width;
 		
+		xAxis.pos['top'] = priceAxis.padding['top'] + priceAxis.height + xAxis.padding['top'];
+		xAxis.pos['bottom'] = xAxis.pos['top'] + xAxis.height;
 		xAxis.pos['left'] = xAxis.padding['left'];
-		xAxis.pos['bottom'] = priceAxis.padding['top'] + priceAxis.height + xAxis.height + xAxis.padding['top'];
+		xAxis.pos['right'] = xAxis.pos['left'] + xAxis.width;
 		
 		redraw()
 	})
@@ -452,8 +463,16 @@ var IDEX = (function(IDEX, $, undefined)
 	function makePriceAxisLabels()
 	{
 		$("#yAxisLabels").empty();
+		$("#yAxisTicks").empty();
+		$("#yAxisGridLines").empty();
 		
-		var priceLabels = [];
+		var labels = [];
+		
+		var ticks = [];
+		var tickLength = priceAxis.tickLength
+		
+		var gridLines = [];
+		
 		
 		var firstTick = priceAxis.min;
 		var lastTick = priceAxis.max;
@@ -467,24 +486,60 @@ var IDEX = (function(IDEX, $, undefined)
 		
 	    for (var i = 0; i < priceAxis.numTicks; i++)
 	    {
-			var priceLabel = {};
+			var label = {};
 
-			priceLabel.text = String(Math.round(firstTick + (i * priceInterval)));
-			priceLabel.y = yStart - (i * heightInterval);
-			priceLabel.x = xPos;
-			//console.log(priceLabel.y)
-			priceLabels.push(priceLabel);
+			label.text = String(Math.round(firstTick + (i * priceInterval)));
+			label.y = yStart - (i * heightInterval);
+			label.x = xPos;
+			labels.push(label);
+			
+			var tick = {};
+			tick.y = yStart - (i * heightInterval);
+			tick.x = xPos;
+			ticks.push(tick);
+			
+			var gridLine = {};
+			gridLine.y = yStart - (i * heightInterval);
+			gridLine.x = xPos;
+			gridLines.push(gridLine);
 		}
 
-		var SVGPriceLabels = d3.select("#yAxisLabels").selectAll("text")
-		.data(priceLabels)
+		var SVGLabels = d3.select("#yAxisLabels").selectAll("text")
+		.data(labels)
 		.enter()
 		.append("text")
 		
-		SVGPriceLabels.attr("x", function (d) { return d.x })
-		.attr("y", function (d) { return d.y })
+		SVGLabels.attr("x", function (d) { return d.x + 10})
+		.attr("y", function (d) { return d.y + 4})
 		.text(function (d) { return d.text })
 		.attr("fill", "white");
+		
+		var SVGTicks = d3.select("#yAxisTicks").selectAll("line")
+		.data(ticks)
+		.enter()
+		.append("line")
+		
+		SVGTicks
+		.attr("x1", function (d) { return d.x })
+		.attr("x2", function (d) { return d.x + tickLength})
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y })
+		.attr("stroke-width", 1)
+		.attr("stroke", "white");
+		
+		var SVGGridLines = d3.select("#yAxisGridLines").selectAll("line")
+		.data(gridLines)
+		.enter()
+		.append("line")
+		
+		SVGGridLines
+		.attr("x1", function (d) { return 0 })
+		.attr("x2", function (d) { return d.x })
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y })
+		.attr("stroke-width", 0.5)
+		.attr("stroke", "white")
+		.attr("stroke-dasharray", "1,3");
 	}
 	
 	
@@ -504,14 +559,20 @@ var IDEX = (function(IDEX, $, undefined)
 	function makeTimeAxisLabels()
 	{
 		$("#xAxisLabels").empty();
+		$("#xAxisTicks").empty();
+
+		
 		var labels = [];
+		
+		var ticks = [];
+		var tickLength = xAxis.tickLength
 		
 		var firstTick = xAxis.min;
 		var lastTick = xAxis.max;
 		var axisRange = lastTick - firstTick;
 		
 		var xStart = xAxis.pos.left;
-		var yPos = xAxis.pos.bottom;
+		var yPos = xAxis.pos.top;
 		
 		var tickInterval = axisRange / (xAxis.numTicks - 1);
 		var xInterval = xAxis.width / (xAxis.numTicks - 1);
@@ -524,6 +585,11 @@ var IDEX = (function(IDEX, $, undefined)
 			label.x = xStart + (i * xInterval);
 			label.y = yPos;
 			labels.push(label);
+			
+			var tick = {};
+			tick.x = xStart + (i * xInterval);
+			tick.y = yPos;
+			ticks.push(tick);
 	    }
 		
 		//var time = new Date((date + GENESIS_TIMESTAMP)*1000);
@@ -538,6 +604,20 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("y", function (d) { return d.y })
 		.text(function (d) { return d.text })
 		.attr("fill", "white");
+		
+		
+		var SVGTimeTicks = d3.select("#xAxisTicks").selectAll("line")
+		.data(ticks)
+		.enter()
+		.append("line")
+		
+		SVGTimeTicks
+		.attr("x1", function (d) { return d.x })
+		.attr("x2", function (d) { return d.x })
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y + tickLength})
+		.attr("stroke-width", 1)
+		.attr("stroke", "white");
 	}
 
 	function formatTimeDate(d)
@@ -642,6 +722,8 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		//console.log(String(e.pageY) + "  " + String(offsetY));
 		
+		console.log(height)
+		console.log(insideY)
 		if ( insideY > 0 && insideY < height 
 			&& insideX > 0 && insideX < width)
 		{
@@ -661,24 +743,35 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("stroke-width", 1)
 			.attr("stroke", "white");
 			
-			//console.log(price)
+			
 			if (insideX > xAxis.padding.left && insideX < xAxis.width + xAxis.padding.left)
 			{
 				var insideTimeX = insideX - xAxis.padding.left;
 				var time = xAxis.getXVal(insideTimeX)
 				time = Math.floor(time)
 				time = formatTimeDate(new Date(time))
-				//console.log(price)
 				
-				$("#cursor_follow_time").attr("y", xAxis.pos.bottom).attr("x", insideX).text(time).attr({"fill":"white"});
+				$("#cursor_follow_time")
+				.text(time)
+				.attr("y", xAxis.pos.bottom)
+				.attr("x", insideX)
+				.attr("fill", "white");
+				
 				var timerect = d3.select("#cursor_follow_time").node().getBBox();
-				d3.select("#backbox_time").attr("x", timerect.x).attr("y", timerect.y)
-				.attr("width", timerect.width).attr("height", timerect.height)
-				.attr("fill", "transparent")
+				d3.select("#backbox_time")
+				.attr("x", timerect.x)
+				.attr("y", timerect.y)
+				.attr("width", timerect.width)
+				.attr("height", timerect.height)
+				.attr("fill", "black")
+				.attr("stroke", "white")
+				.attr("stroke-width", 1);
 			}
 			else
 			{
 				$("#cursor_follow_time").text(""); 
+				$("#backbox_time").attr("width", 0);
+
 			}
 
 			
@@ -687,27 +780,37 @@ var IDEX = (function(IDEX, $, undefined)
 				var insidePriceY = insideY - priceAxis.padding.top;
 				var price = priceAxis.getPriceFromY(insidePriceY)
 				price = price.toFixed(2)
-				//console.log(price)
 				
-				$("#cursor_follow_price").attr("y", insideY).attr("x", priceAxis.pos.left).text(price).attr({"fill":"white"});
+				$("#cursor_follow_price")
+				.text(price)
+				.attr("y", insideY + 5)
+				.attr("x", priceAxis.pos.left + 5)
+				.attr("fill", "white");
+				
 				var volrect = d3.select("#cursor_follow_price").node().getBBox();
-				d3.select("#backbox_price").attr("x", volrect.x).attr("y", volrect.y)
-				.attr("width", volrect.width).attr("height", volrect.height)
-				.attr("fill", "transparent")
+				d3.select("#backbox_price")
+				.attr("x", priceAxis.pos.left)
+				.attr("y", volrect.y)
+				.attr("width", priceAxis.width)
+				.attr("height", volrect.height)
+				.attr("fill", "black")
+				.attr("stroke", "white")
+				.attr("stroke-width", 1);
 			}
 			else
 			{
 				$("#cursor_follow_price").text(""); 
+				$("#backbox_price").attr("width", 0);
 			}
 
 		}
 		else
 		{
-			$("#cursor_follow_x").attr("stroke-width", 1);
-			$("#cursor_follow_y").attr("stroke-width", 1);
-			$("#cursor_follow_vol").text("");
+			$("#cursor_follow_x").attr("stroke-width", 0);
+			$("#cursor_follow_y").attr("stroke-width", 0);
+			$("#cursor_follow_time").text("");
 			$("#cursor_follow_price").text(""); 
-			$("#backbox_vol").attr("width", 0);
+			$("#backbox_time").attr("width", 0);
 			$("#backbox_price").attr("width", 0);
 		}
 
