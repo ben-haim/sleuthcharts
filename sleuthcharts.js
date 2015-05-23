@@ -360,8 +360,10 @@ var IDEX = (function(IDEX, $, undefined)
 		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
 		curChart.visiblePhases = curChart.phases.slice((curChart.phases.length ) - xAxis.numPoints);
 		
+		xAxis.dataMin = curChart.phases[0].startTime;
+		xAxis.dataMax = curChart.phases[curChart.phases.length-1].endTime
 		xAxis.min = curChart.visiblePhases[0].startTime;
-		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].endTime
+		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
 		
 		//console.log(curChart.visiblePhases)
 		
@@ -369,9 +371,76 @@ var IDEX = (function(IDEX, $, undefined)
 		priceAxis.min = priceMinMax[1]
 		priceAxis.max = priceMinMax[0]
 		console.log("bar width:" + String(width))
-
 	}
 
+	function zoomChart(isZoomOut)
+	{
+		var curMax = xAxis.max;
+		var curMin = xAxis.min;
+		var dataMax = xAxis.dataMax;
+		var dataMin = xAxis.dataMin;
+		var diff = (curMax - curMin) / 10;
+		   
+		var newMax = curMax;
+		if (isZoomOut)
+		{
+			var newMin = (curMin-diff > dataMin) ? curMin-diff : dataMin;
+			console.log("curmin: " + String(curMin))
+			console.log("diff: " + String(diff))
+			console.log("newMin: " + String(newMin))
+			console.log("dataMax: " + String(dataMax))
+			console.log("dataMin: " + String(dataMin))
+		}
+		else
+		{
+			var newMin = (curMin+diff < curMax) ? curMin+diff : curMin;
+		}
+		
+		redrawXAxis(newMax, newMin)
+		drawCandleSticks();
+		makePriceAxisLabels();
+		makeTimeAxisLabels();
+		priceSeriesLine();
+	}
+	
+	function redrawXAxis(newMax, newMin)
+	{
+		for (var i = 0; i < curChart.phases.length; i++)
+		{
+			var phase = curChart.phases[i];
+			
+			if ( phase.startTime >= newMin)
+			{
+				break;
+			}
+		}
+		
+		curChart.visiblePhases = curChart.phases.slice(i);
+		xAxis.min = curChart.visiblePhases[0].startTime;
+		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+		//console.log(curChart.visiblePhases);
+		
+		var priceMinMax = getMinMax(curChart.visiblePhases)
+		priceAxis.min = priceMinMax[1]
+		priceAxis.max = priceMinMax[0]
+		
+		var minWidth = 1;
+		var padding = 1.5;
+	    var width = Math.floor(xAxis.width / curChart.visiblePhases.length)
+		width = width < minWidth ? minWidth : width;
+		if (width > 3) padding = 2;
+		if (width >= 5) padding = 3.5;
+		if (width >= 10) padding = 5;
+		if (width >= 20) padding = 10;
+		if (width >= 100) padding = 20;
+		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));	
+		console.log("bar width:" + String(width))	
+		xAxis.xStep = width + padding;
+		xAxis.pointWidth = width;
+		xAxis.pointPadding = padding;
+		xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
+	}
+	
 
     function drawCandleSticks()
     {
@@ -743,8 +812,7 @@ var IDEX = (function(IDEX, $, undefined)
 		var val = null;
 		var points = curChart.visiblePhases;
 		points = curChart.pointData;
-		//console.log(value)
-		//console.log(points)
+
 		if (value >= points[points.length-1].pos.left)
 		{
 			val = points[points.length-1]
@@ -774,6 +842,53 @@ var IDEX = (function(IDEX, $, undefined)
 	}
 
 	
+	
+	$("#chartwrap").on('mousewheel DOMMouseScroll', function(e)
+	{
+		if (!xAxis)
+			return
+		
+		e.preventDefault();
+	
+		
+		if ("type" in e && e.type == "DOMMouseScroll")
+		{
+			var wheelDeltaY = e['originalEvent']['detail'] > 0 ? -1 : 1;
+			var clientX = e['originalEvent']['clientX'];
+			var clientY = e['originalEvent']['clientY'];
+		}
+		else
+		{
+			var wheelDeltaY = e.originalEvent.wheelDeltaY;
+			var clientX = e['clientX'];
+			var clientY = e['clientY'];
+		}
+		var mouseX = e.pageX
+		var mouseY = e.pageY
+		var offsetX = $("#ex_chart").offset().left;
+		var offsetY = $("#ex_chart").offset().top;
+		var insideX = mouseX - offsetX
+		var insideY = mouseY - offsetY
+		var height = xAxis.pos['bottom'];
+		var width = priceAxis.pos['left']; //+ priceAxis.width
+		
+		//console.log(String(e.pageY) + "  " + String(offsetY));
+		
+		if ( insideY >= 0 && insideY <= height 
+			&& insideX >= 0 && insideX <= width)
+		{
+			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom
+				&& insideX >= xAxis.padding.left && insideX <= xAxis.pos.right)
+			{
+				//var insidePriceY = insideY - priceAxis.padding.top;
+				var isZoomOut = wheelDeltaY <= 0;
+				//console.log(clientX)
+				//console.log(clientY)
+				console.log(wheelDeltaY)
+				zoomChart(isZoomOut);
+			}
+		}
+	})
 	
 
 	var prevIndex = -1;
@@ -847,7 +962,7 @@ var IDEX = (function(IDEX, $, undefined)
 				//$("#backbox_price").attr("width", 0);
 			}
 			
-			if (index != prevIndex && index > 0) //&& (closestTime % pointRange <= pointRange/2))
+			if (index != prevIndex && index >= 0) //&& (closestTime % pointRange <= pointRange/2))
 			{
 				prevIndex = index;
 
@@ -892,6 +1007,7 @@ var IDEX = (function(IDEX, $, undefined)
 				}
 				else
 				{
+					prevIndex = -1;
 					//$("#cursor_follow_time").text(""); 
 					//$("#backbox_time").attr("width", 0);
 					hideRenders()
@@ -902,6 +1018,7 @@ var IDEX = (function(IDEX, $, undefined)
 		}
 		else
 		{
+			prevIndex = -1;
 			hideRenders();
 		}
 
