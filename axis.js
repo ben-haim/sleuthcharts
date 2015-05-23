@@ -48,6 +48,8 @@ var IDEX = (function(IDEX, $, undefined)
 		this.dataMax = 0;
 		this.min = 0;
 		this.max = 0;
+		this.minIndex = 0;
+		this.maxIndex = 0;
 		
 		this.numTicks = 0;
 		this.tickInterval = 0;

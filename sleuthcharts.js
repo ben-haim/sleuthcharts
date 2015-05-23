@@ -8,6 +8,8 @@ var IDEX = (function(IDEX, $, undefined)
 	var volumeAxis;
 
     var isDragging = false;
+	var draggingPos = 0;
+	
 	var skynetKeysTick = [2,3,4,5,6]
 	var skynetKeys = [3,4,5,6,7]
 
@@ -370,7 +372,8 @@ var IDEX = (function(IDEX, $, undefined)
 		curChart.visiblePhases = curChart.phases.slice(i);
 		
 		calcPointWidth()
-		
+		xAxis.minIndex = i;
+		xAxis.maxIndex = curChart.phases.length - 1;
 		xAxis.min = curChart.visiblePhases[0].startTime;
 		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
 		//console.log(curChart.visiblePhases);
@@ -379,18 +382,70 @@ var IDEX = (function(IDEX, $, undefined)
 		priceAxis.min = priceMinMax[1]
 		priceAxis.max = priceMinMax[0]
 	}
-
-	function initAxisRange()
+	
+	function shiftXAxis(pos, direction)
 	{
-		var numShow = 30
+		var vis = []
 		
-		if (curChart.phases.length > numShow)
+		if (direction == false)
 		{
-			curChart.visiblePhases = curChart.phases.slice(curChart.phases.length - numShow);
+			if (xAxis.minIndex > 0)
+			{
+				var startIndex = xAxis.minIndex - 1;
+				var endIndex = xAxis.maxIndex - 1;
+				
+				vis = curChart.phases.slice(startIndex, endIndex+1);
+			}
 		}
 		else
 		{
-			curChart.visiblePhases = curChart.phases.slice(0);
+			if (xAxis.maxIndex < curChart.phases.length - 1)
+			{
+				var startIndex = xAxis.minIndex + 1;
+				var endIndex = xAxis.maxIndex + 1;
+				
+				vis = curChart.phases.slice(startIndex, endIndex+1);
+			}
+		}
+
+		if (vis.length)
+		{
+			//console.log(xAxis.maxIndex)
+			//console.log(curChart.phases.length - 1)
+			//console.log(vis[0].startTime)
+			//console.log(curChart.visiblePhases[0].startTime)
+			curChart.visiblePhases = vis;
+			
+			calcPointWidth()
+			
+			xAxis.minIndex = startIndex;
+			xAxis.maxIndex = endIndex;
+			xAxis.min = curChart.visiblePhases[0].startTime;
+			xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+			//console.log(curChart.visiblePhases);
+			
+			var priceMinMax = getMinMax(curChart.visiblePhases)
+			priceAxis.min = priceMinMax[1]
+			priceAxis.max = priceMinMax[0]
+			//console.log(xAxis.maxIndex)
+			//console.log(xAxis)
+		}
+
+	}
+
+	function initAxisRange()
+	{
+		var numShow = 30;
+		var index = 0;
+		
+		if (curChart.phases.length > numShow)
+		{
+			index = curChart.phases.length - numShow;
+			curChart.visiblePhases = curChart.phases.slice(index);
+		}
+		else
+		{
+			curChart.visiblePhases = curChart.phases.slice(index);
 		}
 		
 		calcPointWidth();
@@ -399,7 +454,9 @@ var IDEX = (function(IDEX, $, undefined)
 		xAxis.dataMax = curChart.phases[curChart.phases.length-1].startTime
 		xAxis.min = curChart.visiblePhases[0].startTime;
 		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
-
+		xAxis.minIndex = index;
+		xAxis.maxIndex = curChart.phases.length - 1;
+		
 		var priceMinMax = getMinMax(curChart.visiblePhases)
 		priceAxis.min = priceMinMax[1]
 		priceAxis.max = priceMinMax[0]
@@ -416,6 +473,7 @@ var IDEX = (function(IDEX, $, undefined)
 		if (width >= 10) padding = 5;
 		if (width >= 20) padding = 10;
 		if (width >= 100) padding = 20;
+		
 		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
 		var scale = padding / width;
 		width = width - padding
@@ -435,11 +493,11 @@ var IDEX = (function(IDEX, $, undefined)
 		//xAxis.pointPadding = padding;
 		//xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
 		
-		console.log("w:"+String(width))
-		console.log(xAxis.width / curChart.visiblePhases.length)
-		console.log(padding)
-		console.log(curChart.visiblePhases.length)
-		console.log(xAxis.numPoints)
+		//console.log("w:"+String(width))
+		//console.log(xAxis.width / curChart.visiblePhases.length)
+		//console.log(padding)
+		//console.log(curChart.visiblePhases.length)
+		//console.log(xAxis.numPoints)
 	}
 
 	
@@ -456,11 +514,11 @@ var IDEX = (function(IDEX, $, undefined)
 		if (isZoomOut)
 		{
 			var newMin = (curMin-diff > dataMin) ? curMin-diff : dataMin;
-			console.log("curmin: " + String(curMin))
-			console.log("diff: " + String(diff))
-			console.log("newMin: " + String(newMin))
-			console.log("dataMax: " + String(dataMax))
-			console.log("dataMin: " + String(dataMin))
+			//console.log("curmin: " + String(curMin))
+			//console.log("diff: " + String(diff))
+			//console.log("newMin: " + String(newMin))
+			//console.log("dataMax: " + String(dataMax))
+			//console.log("dataMin: " + String(dataMin))
 		}
 		else
 		{
@@ -518,7 +576,7 @@ var IDEX = (function(IDEX, $, undefined)
 				var isZoomOut = wheelDeltaY <= 0;
 				//console.log(clientX)
 				//console.log(clientY)
-				console.log(wheelDeltaY)
+				//console.log(wheelDeltaY)
 				zoomChart(isZoomOut);
 			}
 		}
@@ -826,26 +884,6 @@ var IDEX = (function(IDEX, $, undefined)
 	}
 	
 
-    $("#ex_chart").mousedown(function(e) 
-    {
-	    offsetX = $("#ex_chart").offset().left;
-	    offsetY = $("#ex_chart").offset().top;
-	    var xval = Math.round(e.pageX-offsetX);
-	    var yval = Math.round(e.pageY-offsetY);
-		
-	    if(yval > 650 && yval < 0 && xval > 0 && xval < 1200)
-	    {
-		    var timespan = $("input[name=time_span]:checked").val();
-		    if(timespan == 0) timespan = getNxtTime() - first;
-		    var chwidth = timespan/(getNxtTime()-first)*1200;
-		    if(xval < scrollpos && xval > scrollpos-chwidth && getNxtTime()-first > timespan)
-		    {
-			    isDragging = true;
-			    draggingPos = xval-scrollpos+chwidth;
-		    }
-	    }
-    })
-
 	
 	
 	function priceSeriesLine()
@@ -1013,9 +1051,9 @@ var IDEX = (function(IDEX, $, undefined)
 				.attr("stroke", "#D3D3D3");
 				
 				
-				if (insideX >= xAxis.padding.left && insideX <= xAxis.width + xAxis.padding.left)
+				if (insideX >= xAxis.pos.left && insideX <= xAxis.pos.right)
 				{
-					var insideTimeX = insideX - xAxis.padding.left;
+					var insideTimeX = insideX - xAxis.pos.left;
 					var time = xAxis.getXVal(insideTimeX)
 					time = Math.floor(time)
 					time = formatTimeDate(new Date(time))
@@ -1060,20 +1098,61 @@ var IDEX = (function(IDEX, $, undefined)
 
 		if(isDragging)
 		{
-			var xval = Math.round(e.pageX-offsetX);
-			var yval = Math.round(e.pageY-offsetY);
-
-			var timespan =  $("input[name=time_span]:checked").val();
-			if(timespan == 0) timespan = getNxtTime() - first;
-			var chwidth = timespan/(getNxtTime()-first)*1200;
-			var newpos = xval-draggingPos;
-			if(newpos < 0) newpos = 0;
-			if(newpos+chwidth > 1200) newpos = 1200-chwidth;
-			d3.select("#scroll").attr("x", newpos);
-			scrollpos = newpos+chwidth;
-			draw();
+			var insideTimeX = insideX - xAxis.pos.left;
+			var diff = insideTimeX - draggingPos;
+			var direction = diff < 0
+			diff = Math.abs(diff)
+			
+			if (diff != 0 && diff > xAxis.xStep)
+			{
+				console.log("insideTimeX: " + String(insideTimeX))
+				console.log(draggingPos)
+				console.log(diff)
+				console.log(direction)
+				
+				draggingPos = insideTimeX
+				shiftXAxis(diff, direction)
+				//calcPointWidth();
+				drawCandleSticks();
+				makePriceAxisLabels();
+				makeTimeAxisLabels();
+				priceSeriesLine();
+			}
 		}
     });
+	
+    $("#ex_chart").mousedown(function(e) 
+    {
+		if (!xAxis)
+			return
+		var mouseX = e.pageX
+		var mouseY = e.pageY
+		var offsetX = $("#ex_chart").offset().left;
+		var offsetY = $("#ex_chart").offset().top;
+		var insideX = mouseX - offsetX
+		var insideY = mouseY - offsetY
+
+		var height = xAxis.pos['bottom'];
+		var width = priceAxis.pos['left']; //+ priceAxis.width
+		
+		
+		if (insideY >= 0 && insideY <= height 
+			&& insideX >= 0 && insideX <= width)
+	    {
+			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom
+				&& insideX >= xAxis.pos.left && insideX <= xAxis.pos.right)
+			{
+				//console.log(e)
+			    isDragging = true;
+			    draggingPos = insideX - xAxis.pos.left;
+			}
+	    }
+    })
+	
+    $("#ex_chart").mouseup(function(e) 
+	{
+	    isDragging = false;
+    })
 	
 	
 	function hideRenders()
@@ -1135,11 +1214,6 @@ var IDEX = (function(IDEX, $, undefined)
 		return element.transform.baseVal.initialize(element.ownerSVGElement.createSVGTransformFromMatrix(m));
 	};
 	
-	
-    $(document).mouseup(function(e) 
-	{
-	    isDragging = false;
-    })
 	
 	
 	
