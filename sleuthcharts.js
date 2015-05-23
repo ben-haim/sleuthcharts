@@ -369,11 +369,11 @@ var IDEX = (function(IDEX, $, undefined)
 			}
 		}
 		
-		curChart.visiblePhases = curChart.phases.slice(i);
+		curChart.visiblePhases = curChart.phases.slice(i, xAxis.maxIndex + 1);
 		
 		calcPointWidth()
 		xAxis.minIndex = i;
-		xAxis.maxIndex = curChart.phases.length - 1;
+		xAxis.maxIndex = xAxis.maxIndex;
 		xAxis.min = curChart.visiblePhases[0].startTime;
 		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
 		//console.log(curChart.visiblePhases);
@@ -383,7 +383,7 @@ var IDEX = (function(IDEX, $, undefined)
 		priceAxis.max = priceMinMax[0]
 	}
 	
-	function shiftXAxis(pos, direction)
+	function shiftXAxis(shifts, direction)
 	{
 		var vis = []
 		
@@ -391,8 +391,8 @@ var IDEX = (function(IDEX, $, undefined)
 		{
 			if (xAxis.minIndex > 0)
 			{
-				var startIndex = xAxis.minIndex - 1;
-				var endIndex = xAxis.maxIndex - 1;
+				var startIndex = xAxis.minIndex - shifts;
+				var endIndex = xAxis.maxIndex - shifts;
 				
 				vis = curChart.phases.slice(startIndex, endIndex+1);
 			}
@@ -401,8 +401,8 @@ var IDEX = (function(IDEX, $, undefined)
 		{
 			if (xAxis.maxIndex < curChart.phases.length - 1)
 			{
-				var startIndex = xAxis.minIndex + 1;
-				var endIndex = xAxis.maxIndex + 1;
+				var startIndex = xAxis.minIndex + shifts;
+				var endIndex = xAxis.maxIndex + shifts;
 				
 				vis = curChart.phases.slice(startIndex, endIndex+1);
 			}
@@ -422,7 +422,6 @@ var IDEX = (function(IDEX, $, undefined)
 			xAxis.maxIndex = endIndex;
 			xAxis.min = curChart.visiblePhases[0].startTime;
 			xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
-			//console.log(curChart.visiblePhases);
 			
 			var priceMinMax = getMinMax(curChart.visiblePhases)
 			priceAxis.min = priceMinMax[1]
@@ -482,16 +481,6 @@ var IDEX = (function(IDEX, $, undefined)
 		xAxis.pointWidth = width;
 		xAxis.pointPadding = padding;
 		xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
-		
-		//var needed = curChart.visiblePhases.length - xAxis.numPoints
-		//var ratio = xAxis.numPoints / curChart.visiblePhases.length
-		//var scale = 1 - ratio
-		//width = width - (width * scale)
-		//padding = padding - (padding * scale)
-		//xAxis.xStep = width + padding;
-		//xAxis.pointWidth = width;
-		//xAxis.pointPadding = padding;
-		//xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
 		
 		//console.log("w:"+String(width))
 		//console.log(xAxis.width / curChart.visiblePhases.length)
@@ -1105,13 +1094,15 @@ var IDEX = (function(IDEX, $, undefined)
 			
 			if (diff != 0 && diff > xAxis.xStep)
 			{
-				console.log("insideTimeX: " + String(insideTimeX))
-				console.log(draggingPos)
-				console.log(diff)
-				console.log(direction)
+				//console.log("insideTimeX: " + String(insideTimeX))
+				//console.log(draggingPos)
+				//console.log(diff)
+				//console.log(direction)
 				
+				var shifts = Math.floor(diff / xAxis.xStep)
+				//console.log(shifts)
 				draggingPos = insideTimeX
-				shiftXAxis(diff, direction)
+				shiftXAxis(shifts, direction)
 				//calcPointWidth();
 				drawCandleSticks();
 				makePriceAxisLabels();
@@ -1142,6 +1133,7 @@ var IDEX = (function(IDEX, $, undefined)
 			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom
 				&& insideX >= xAxis.pos.left && insideX <= xAxis.pos.right)
 			{
+				$(this).css("cursor", "move");
 				//console.log(e)
 			    isDragging = true;
 			    draggingPos = insideX - xAxis.pos.left;
@@ -1151,6 +1143,7 @@ var IDEX = (function(IDEX, $, undefined)
 	
     $("#ex_chart").mouseup(function(e) 
 	{
+		$(this).css("cursor", "default");
 	    isDragging = false;
     })
 	
