@@ -120,7 +120,7 @@ var IDEX = (function(IDEX, $, undefined)
         obj['mode'] = "bars";
         obj['exchg'] = "nxtae";
         obj['pair'] = id+"_NXT";
-        obj['num'] = "400"
+        obj['num'] = "600"
         obj['bars'] = "tick"
         obj['len'] = len
         var params = new IDEX.SkyNETParams(obj)
@@ -368,7 +368,7 @@ var IDEX = (function(IDEX, $, undefined)
 		var priceMinMax = getMinMax(curChart.visiblePhases)
 		priceAxis.min = priceMinMax[1]
 		priceAxis.max = priceMinMax[0]
-		console.log(width)
+		console.log("bar width:" + String(width))
 
 	}
 
@@ -426,7 +426,13 @@ var IDEX = (function(IDEX, $, undefined)
 				"L", xMiddle, topLeg
 			]
 
-			allPhases.push(phase)
+			
+			var positions = {}
+			positions['left'] = left;
+			positions['right'] = right;
+			positions['middle'] = xMiddle;
+			
+			allPhases.push({"phase":phase, "pos":positions})
 			
 			var box = d3.select("#boxes").selectAll("path")
 			.data(allPhases)
@@ -440,6 +446,7 @@ var IDEX = (function(IDEX, $, undefined)
 			
 		    xPos += xAxis.xStep;
 	    }
+		curChart.pointData = allPhases;
 		
 		//console.log(Date.now() - a)	
     }
@@ -698,39 +705,79 @@ var IDEX = (function(IDEX, $, undefined)
 		d3.select("#seriesLine").append("line")
 		.attr("x1", 0 )
 		.attr("x2", bbox.right)
-		.attr("y1", priceAxis.pos['bottom'])
-		.attr("y2", priceAxis.pos['bottom'])
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr("y1", priceAxis.pos['bottom'] + 0.5)
+		.attr("y2", priceAxis.pos['bottom'] + 0.5)
+		.attr("stroke-width", 1)
+		.attr("stroke", "#737373");
 		
 		d3.select("#seriesLine").append("line")
-		.attr("x1", priceAxis.pos['left'])
-		.attr("x2", priceAxis.pos['left'])
+		.attr("x1", priceAxis.pos['left'] + 0.5)
+		.attr("x2", priceAxis.pos['left'] + 0.5)
 		.attr("y1", 0)
 		.attr("y2", priceAxis.pos['bottom'])
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr("stroke-width", 1)
+		.attr("stroke", "#737373");
 		
 		d3.select("#seriesLine").append("line")
 		.attr("x1", 0 )
 		.attr("x2", bbox.right)
-		.attr("y1", xAxis.pos['top'])
-		.attr("y2", xAxis.pos['top'])
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr("y1", xAxis.pos['top'] + 0.5)
+		.attr("y2", xAxis.pos['top'] + 0.5)
+		.attr("stroke-width", 1)
+		.attr("stroke", "#737373");
 		
 		d3.select("#seriesLine").append("line")
 		.attr("x1", 0 )
 		.attr("x2", bbox.right)
-		.attr("y1", xAxis.pos['bottom'])
-		.attr("y2", xAxis.pos['bottom'])
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr("y1", xAxis.pos['bottom'] + 0.5)
+		.attr("y2", xAxis.pos['bottom'] + 0.5)
+		.attr("stroke-width", 1)
+		.attr("stroke", "#737373");
 	}
 	
 	
+
+
+	function getPoint(value) 
+	{
+		var val = null;
+		var points = curChart.visiblePhases;
+		points = curChart.pointData;
+		//console.log(value)
+		//console.log(points)
+		if (value >= points[points.length-1].pos.left)
+		{
+			val = points[points.length-1]
+		}
+		else if (value <= points[0].pos.left)
+		{
+			val = points[0]
+		}
+		else
+		{
+			for (var i = 0; i < points.length; i++) 
+			{
+				point = points[i]
+				//console.log(point)
+				if ( point.pos.left >= value) 
+				{
+					val = points[i-1]
+					break;
+				}
+			}
+		}
+		
+		//console.log(value)
+		//console.log(val)
+		//console.log(points)
+		return val;
+	}
+
+	
 	
 
+	var prevIndex = -1;
+				
     $(document).on("mousemove", function(e)
     {
 		if (!xAxis)
@@ -751,6 +798,14 @@ var IDEX = (function(IDEX, $, undefined)
 		if ( insideY >= 0 && insideY <= height 
 			&& insideX >= 0 && insideX <= width)
 		{
+			//var insideTimeX = insideX - xAxis.padding.left;
+			//var time = xAxis.getXVal(insideTimeX)
+			//time = Math.floor(time)
+			var closestPoint = getPoint(insideX)
+			//console.log(closestPoint.phase.high)
+			//console.log(new Date(closestPoint.phase.endTime))
+			var index = curChart.visiblePhases.indexOf(closestPoint.phase)
+			//console.log(index)
 			
 			$("#cursor_follow_x")
 			.attr("x1", 0)
@@ -758,52 +813,7 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("y1", insideY + 0.5)
 			.attr("y2", insideY + 0.5)
 			.attr("stroke-width", 1)
-			.attr("stroke", "white");
-
-			$("#cursor_follow_y")
-			.attr("x1", insideX + 0.5)
-			.attr("x2", insideX + 0.5)
-			.attr("y1", 0)
-			.attr("y2", height)
-			.attr("stroke-width", 1)
-			.attr("stroke", "white");
-			
-			
-			if (insideX >= xAxis.padding.left && insideX <= xAxis.width + xAxis.padding.left)
-			{
-				var insideTimeX = insideX - xAxis.padding.left;
-				var time = xAxis.getXVal(insideTimeX)
-				time = Math.floor(time)
-				time = formatTimeDate(new Date(time))
-				
-				var formattedXPos = insideX - 55
-				
-				$("#cursor_follow_time")
-				.text(time)
-				.attr("y", xAxis.pos.top + 15)
-				.attr("x", insideX - 37)
-				.attr("fill", "#D3D3D3")
-				.attr("font-family", "Helvetica")
-				.attr("font-size", "12px")
-				
-				var timerect = d3.select("#cursor_follow_time").node().getBBox();
-				d3.select("#backbox_time")
-				.attr("x", formattedXPos)
-				.attr("y", xAxis.pos.top)
-				.attr("width", 110)
-				.attr("height", xAxis.height)
-				.attr("fill", "black")
-				.attr("stroke", "white")
-				.attr("stroke-width", 0.5);
-			}
-			else
-			{
-				//$("#cursor_follow_time").text(""); 
-				//$("#backbox_time").attr("width", 0);
-				hideRenders()
-
-			}
-
+			.attr("stroke", "#D3D3D3");
 			
 			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom)
 			{
@@ -835,6 +845,58 @@ var IDEX = (function(IDEX, $, undefined)
 				hideRenders()
 				//$("#cursor_follow_price").text(""); 
 				//$("#backbox_price").attr("width", 0);
+			}
+			
+			if (index != prevIndex && index > 0) //&& (closestTime % pointRange <= pointRange/2))
+			{
+				prevIndex = index;
+
+				$("#cursor_follow_y")
+				//.attr("x1", insideX + 0.5)
+				//.attr("x2", insideX + 0.5)
+				.attr("x1", closestPoint.pos.middle + 0.5)
+				.attr("x2", closestPoint.pos.middle + 0.5)
+				.attr("y1", 0)
+				.attr("y2", height)
+				.attr("stroke-width", 1)
+				.attr("stroke", "#D3D3D3");
+				
+				
+				if (insideX >= xAxis.padding.left && insideX <= xAxis.width + xAxis.padding.left)
+				{
+					var insideTimeX = insideX - xAxis.padding.left;
+					var time = xAxis.getXVal(insideTimeX)
+					time = Math.floor(time)
+					time = formatTimeDate(new Date(time))
+					
+					var formattedXPos = insideX - 55
+					
+					$("#cursor_follow_time")
+					//.text(time)
+					.text(formatTimeDate(new Date(closestPoint.phase.startTime)))
+					.attr("y", xAxis.pos.top + 15)
+					.attr("x", insideX - 37)
+					.attr("fill", "#D3D3D3")
+					.attr("font-family", "Helvetica")
+					.attr("font-size", "12px")
+					
+					var timerect = d3.select("#cursor_follow_time").node().getBBox();
+					d3.select("#backbox_time")
+					.attr("x", formattedXPos)
+					.attr("y", xAxis.pos.top)
+					.attr("width", 110)
+					.attr("height", xAxis.height)
+					.attr("fill", "black")
+					.attr("stroke", "white")
+					.attr("stroke-width", 0.5);
+				}
+				else
+				{
+					//$("#cursor_follow_time").text(""); 
+					//$("#backbox_time").attr("width", 0);
+					hideRenders()
+
+				}
 			}
 
 		}
@@ -943,7 +1005,32 @@ $(window).load(function()
 
 
 /*
+	//console.log(new Date((Math.log(time) / Math.LN10) -  * xAxis.min));
 
+	var a = []
+	for (var i = 0; i < curChart.visiblePhases.length; i++)
+	{
+		var phase = curChart.visiblePhases[i];
+		var times = phase.startTime;
+		a.push(times)
+	}
+	var o = d3.scale.ordinal()
+	.domain(a)
+	//.range([a[0], a[a.length - 1]]);
+	//.rangePoints([a[0], a[a.length - 1]]);
+	.rangePoints([0, xAxis.width]);
+
+
+	console.log(o.range())
+	console.log(a)
+	
+	var axis = d3.svg.axis().scale(o)
+	if ( x == 0 )
+		
+		d3.select("#a").append("g").call(axis)
+	x = 1
+			
+			
 	var iss = 0
 	$("#clickme").on("click", function()
 	{

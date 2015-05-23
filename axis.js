@@ -135,6 +135,8 @@ var IDEX = (function(IDEX, $, undefined)
 	
 	IDEX.Axis.prototype.getXVal = function(xPos)
 	{
+		//console.log(this.max)
+		//console.log(this.min)
 		var range = this.max - this.min;
 		var ratio = xPos / this.width;
 		var num = ratio * range;
