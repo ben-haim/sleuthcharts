@@ -265,6 +265,18 @@ var IDEX = (function(IDEX, $, undefined)
 		getData({}, barWidth).done(function(data)
 		{
 			console.log(data)
+			
+			var lastTime = -1;
+			var lastIndex = 0
+			for (var i = 0; i < data.results.length; i++)
+			{
+				var point = data.results[i];
+				if (point[0] < lastTime)
+					lastIndex = i;
+				lastTime = point[0]
+			}
+			console.log(lastIndex)
+			data.results = data.results.splice(lastIndex)
 			var both = getStepOHLC(data.results);
 			var ohlc = both[0]
 			var vol = both[1]
@@ -276,7 +288,8 @@ var IDEX = (function(IDEX, $, undefined)
 			curChart.barWidth = barWidth
 			curChart.phases = ohlc
 
-			calcPointWidth();
+			initAxisRange();
+			//calcPointWidth();
 			drawCandleSticks();
 			makePriceAxisLabels();
 			makeTimeAxisLabels();
@@ -340,39 +353,97 @@ var IDEX = (function(IDEX, $, undefined)
 		console.log(bbox)
 	}
 	
+	function redrawXAxis(newMax, newMin)
+	{
+		for (var i = 0; i < curChart.phases.length; i++)
+		{
+			var phase = curChart.phases[i];
+			
+			if ( phase.startTime >= newMin)
+			{
+				if (i != 0)
+					i--;
+				break;
+			}
+		}
+		
+		curChart.visiblePhases = curChart.phases.slice(i);
+		
+		calcPointWidth()
+		
+		xAxis.min = curChart.visiblePhases[0].startTime;
+		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+		//console.log(curChart.visiblePhases);
+		
+		var priceMinMax = getMinMax(curChart.visiblePhases)
+		priceAxis.min = priceMinMax[1]
+		priceAxis.max = priceMinMax[0]
+	}
 
+	function initAxisRange()
+	{
+		var numShow = 30
+		
+		if (curChart.phases.length > numShow)
+		{
+			curChart.visiblePhases = curChart.phases.slice(curChart.phases.length - numShow);
+		}
+		else
+		{
+			curChart.visiblePhases = curChart.phases.slice(0);
+		}
+		
+		calcPointWidth();
+
+		xAxis.dataMin = curChart.phases[0].startTime;
+		xAxis.dataMax = curChart.phases[curChart.phases.length-1].startTime
+		xAxis.min = curChart.visiblePhases[0].startTime;
+		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+
+		var priceMinMax = getMinMax(curChart.visiblePhases)
+		priceAxis.min = priceMinMax[1]
+		priceAxis.max = priceMinMax[0]
+	}
+	
 	function calcPointWidth()
 	{
 		var minWidth = 1;
-		var padding = 1.5;
-	    var width = Math.floor(xAxis.width / curChart.phases.length)
+		var padding = 0.5;
+	    var width = xAxis.width / curChart.visiblePhases.length
 		width = width < minWidth ? minWidth : width;
-		if (width > 3) padding = 2;
+		if (width >= 3) padding = 2;
 		if (width >= 5) padding = 3.5;
 		if (width >= 10) padding = 5;
 		if (width >= 20) padding = 10;
 		if (width >= 100) padding = 20;
+		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
+		var scale = padding / width;
+		width = width - padding
 		
 		xAxis.xStep = width + padding;
 		xAxis.pointWidth = width;
 		xAxis.pointPadding = padding;
 		xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
-		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
-		curChart.visiblePhases = curChart.phases.slice((curChart.phases.length ) - xAxis.numPoints);
 		
-		xAxis.dataMin = curChart.phases[0].startTime;
-		xAxis.dataMax = curChart.phases[curChart.phases.length-1].endTime
-		xAxis.min = curChart.visiblePhases[0].startTime;
-		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+		//var needed = curChart.visiblePhases.length - xAxis.numPoints
+		//var ratio = xAxis.numPoints / curChart.visiblePhases.length
+		//var scale = 1 - ratio
+		//width = width - (width * scale)
+		//padding = padding - (padding * scale)
+		//xAxis.xStep = width + padding;
+		//xAxis.pointWidth = width;
+		//xAxis.pointPadding = padding;
+		//xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
 		
-		//console.log(curChart.visiblePhases)
-		
-		var priceMinMax = getMinMax(curChart.visiblePhases)
-		priceAxis.min = priceMinMax[1]
-		priceAxis.max = priceMinMax[0]
-		console.log("bar width:" + String(width))
+		console.log("w:"+String(width))
+		console.log(xAxis.width / curChart.visiblePhases.length)
+		console.log(padding)
+		console.log(curChart.visiblePhases.length)
+		console.log(xAxis.numPoints)
 	}
 
+	
+	
 	function zoomChart(isZoomOut)
 	{
 		var curMax = xAxis.max;
@@ -393,53 +464,65 @@ var IDEX = (function(IDEX, $, undefined)
 		}
 		else
 		{
-			var newMin = (curMin+diff < curMax) ? curMin+diff : curMin;
+			var newMin = (curMin + diff < curMax) ? curMin + diff : curMin;
 		}
 		
 		redrawXAxis(newMax, newMin)
+		//calcPointWidth();
 		drawCandleSticks();
 		makePriceAxisLabels();
 		makeTimeAxisLabels();
 		priceSeriesLine();
 	}
 	
-	function redrawXAxis(newMax, newMin)
+	
+	
+	$("#chartwrap").on('mousewheel DOMMouseScroll', function(e)
 	{
-		for (var i = 0; i < curChart.phases.length; i++)
+		if (!xAxis)
+			return
+		
+		e.preventDefault();
+	
+		
+		if ("type" in e && e.type == "DOMMouseScroll")
 		{
-			var phase = curChart.phases[i];
-			
-			if ( phase.startTime >= newMin)
+			var wheelDeltaY = e['originalEvent']['detail'] > 0 ? -1 : 1;
+			var clientX = e['originalEvent']['clientX'];
+			var clientY = e['originalEvent']['clientY'];
+		}
+		else
+		{
+			var wheelDeltaY = e.originalEvent.wheelDeltaY;
+			var clientX = e['clientX'];
+			var clientY = e['clientY'];
+		}
+		var mouseX = e.pageX
+		var mouseY = e.pageY
+		var offsetX = $("#ex_chart").offset().left;
+		var offsetY = $("#ex_chart").offset().top;
+		var insideX = mouseX - offsetX
+		var insideY = mouseY - offsetY
+		var height = xAxis.pos['bottom'];
+		var width = priceAxis.pos['left']; //+ priceAxis.width
+		
+		//console.log(String(e.pageY) + "  " + String(offsetY));
+		
+		if ( insideY >= 0 && insideY <= height 
+			&& insideX >= 0 && insideX <= width)
+		{
+			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom
+				&& insideX >= xAxis.padding.left && insideX <= xAxis.pos.right)
 			{
-				break;
+				//var insidePriceY = insideY - priceAxis.padding.top;
+				var isZoomOut = wheelDeltaY <= 0;
+				//console.log(clientX)
+				//console.log(clientY)
+				console.log(wheelDeltaY)
+				zoomChart(isZoomOut);
 			}
 		}
-		
-		curChart.visiblePhases = curChart.phases.slice(i);
-		xAxis.min = curChart.visiblePhases[0].startTime;
-		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
-		//console.log(curChart.visiblePhases);
-		
-		var priceMinMax = getMinMax(curChart.visiblePhases)
-		priceAxis.min = priceMinMax[1]
-		priceAxis.max = priceMinMax[0]
-		
-		var minWidth = 1;
-		var padding = 1.5;
-	    var width = Math.floor(xAxis.width / curChart.visiblePhases.length)
-		width = width < minWidth ? minWidth : width;
-		if (width > 3) padding = 2;
-		if (width >= 5) padding = 3.5;
-		if (width >= 10) padding = 5;
-		if (width >= 20) padding = 10;
-		if (width >= 100) padding = 20;
-		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));	
-		console.log("bar width:" + String(width))	
-		xAxis.xStep = width + padding;
-		xAxis.pointWidth = width;
-		xAxis.pointPadding = padding;
-		xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
-	}
+	})
 	
 
     function drawCandleSticks()
@@ -453,10 +536,11 @@ var IDEX = (function(IDEX, $, undefined)
 		var phases = curChart.visiblePhases;
 		var phasesLength = phases.length;
 
-		console.log(curChart)
+		//console.log(curChart)
 		var a = Date.now()
 		//console.log(xAxis)
 		var allPhases = []
+		
 	    for (var i = 0; i < phasesLength; i++)
 		{
 			var phase = phases[i];
@@ -510,8 +594,8 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("d", d.join(" "))
 			.attr("fill", fillColor)
 			.attr("stroke", strokeColor)
-			.attr("stroke-width", "1")
-			.attr('shape-rendering', "crispEdges")
+			.attr("stroke-width", 1)
+			//.attr('shape-rendering', "crispEdges")
 			
 		    xPos += xAxis.xStep;
 	    }
@@ -841,54 +925,6 @@ var IDEX = (function(IDEX, $, undefined)
 		return val;
 	}
 
-	
-	
-	$("#chartwrap").on('mousewheel DOMMouseScroll', function(e)
-	{
-		if (!xAxis)
-			return
-		
-		e.preventDefault();
-	
-		
-		if ("type" in e && e.type == "DOMMouseScroll")
-		{
-			var wheelDeltaY = e['originalEvent']['detail'] > 0 ? -1 : 1;
-			var clientX = e['originalEvent']['clientX'];
-			var clientY = e['originalEvent']['clientY'];
-		}
-		else
-		{
-			var wheelDeltaY = e.originalEvent.wheelDeltaY;
-			var clientX = e['clientX'];
-			var clientY = e['clientY'];
-		}
-		var mouseX = e.pageX
-		var mouseY = e.pageY
-		var offsetX = $("#ex_chart").offset().left;
-		var offsetY = $("#ex_chart").offset().top;
-		var insideX = mouseX - offsetX
-		var insideY = mouseY - offsetY
-		var height = xAxis.pos['bottom'];
-		var width = priceAxis.pos['left']; //+ priceAxis.width
-		
-		//console.log(String(e.pageY) + "  " + String(offsetY));
-		
-		if ( insideY >= 0 && insideY <= height 
-			&& insideX >= 0 && insideX <= width)
-		{
-			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom
-				&& insideX >= xAxis.padding.left && insideX <= xAxis.pos.right)
-			{
-				//var insidePriceY = insideY - priceAxis.padding.top;
-				var isZoomOut = wheelDeltaY <= 0;
-				//console.log(clientX)
-				//console.log(clientY)
-				console.log(wheelDeltaY)
-				zoomChart(isZoomOut);
-			}
-		}
-	})
 	
 
 	var prevIndex = -1;
