@@ -182,6 +182,264 @@ var IDEX = (function(IDEX, $, undefined)
 	}
 	
 	
+	IDEX.makePriceAxisLabels = function(priceAxis)
+	{
+		$("#yAxisLabels").empty();
+		$("#yAxisTicks").empty();
+		$("#yAxisGridLines").empty();
+		
+		var labels = [];
+		
+		var ticks = [];
+		var tickLength = priceAxis.tickLength
+		
+		var gridLines = [];
+		
+		
+		var firstTick = priceAxis.min - (priceAxis.min * priceAxis.minPadding);
+		var lastTick = priceAxis.max + (priceAxis.max * priceAxis.maxPadding);
+		var axisRange = lastTick - firstTick;
+		
+		
+		var yStart = priceAxis.pos.bottom;
+		var xPos = priceAxis.pos.left;
+		
+		var priceInterval = axisRange / (priceAxis.numTicks - 1);
+		var heightInterval = Math.round(priceAxis.height / (priceAxis.numTicks - 1));
+		
+	    for (var i = 0; i < priceAxis.numTicks; i++)
+	    {
+			if (i == 0 || i == priceAxis.numTicks - 1)
+				continue
+			
+			var label = {};
+			label.text = String(Math.round(firstTick + (i * priceInterval)));
+			label.y = yStart - (i * heightInterval);
+			label.x = xPos;
+			labels.push(label);
+			
+			var tick = {};
+			tick.y = yStart - (i * heightInterval);
+			tick.x = xPos;
+			ticks.push(tick);
+			
+			var gridLine = {};
+			gridLine.y = yStart - (i * heightInterval);
+			gridLine.x = xPos;
+			gridLines.push(gridLine);
+		}
+
+		var SVGLabels = d3.select("#yAxisLabels").selectAll("text")
+		.data(labels)
+		.enter()
+		.append("text")
+		
+		SVGLabels.attr("x", function (d) { return d.x + 10})
+		.attr("y", function (d) { return d.y + 4})
+		.text(function (d) { return d.text })
+		.attr("fill", "white")
+		.attr("fill", "#D3D3D3")
+		.attr("font-family", "Helvetica")
+		.attr("font-size", "13px")
+		
+		var SVGTicks = d3.select("#yAxisTicks").selectAll("line")
+		.data(ticks)
+		.enter()
+		.append("line")
+		
+		SVGTicks
+		.attr("x1", function (d) { return d.x })
+		.attr("x2", function (d) { return d.x + tickLength})
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y })
+		.attr("stroke-width", 1)
+		.attr("stroke", "white");
+		
+		var SVGGridLines = d3.select("#yAxisGridLines").selectAll("line")
+		.data(gridLines)
+		.enter()
+		.append("line")
+		
+		SVGGridLines
+		.attr("x1", function (d) { return 0 })
+		.attr("x2", function (d) { return d.x })
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y })
+		.attr("stroke-width", 0.5)
+		.attr("stroke", "white")
+		.attr("stroke-dasharray", "1,3");
+	}
+	
+	
+	IDEX.makeVolAxisLabels = function(volAxis)
+	{
+		$("#volAxisLabels").empty();
+		$("#volAxisTicks").empty();
+		$("#volAxisGridLines").empty();
+		
+		var labels = [];
+		
+		var ticks = [];
+		var tickLength = volAxis.tickLength
+		
+		var gridLines = [];
+		
+		
+		var firstTick = volAxis.min - (volAxis.min * volAxis.minPadding);
+		var lastTick = volAxis.max + (volAxis.max * volAxis.maxPadding);
+		var axisRange = lastTick - firstTick;
+		
+		
+		var yStart = volAxis.pos.bottom;
+		var xPos = volAxis.pos.left;
+		
+		var volInterval = axisRange / (volAxis.numTicks - 1);
+		var heightInterval = Math.round(volAxis.height / (volAxis.numTicks - 1));
+		
+	    for (var i = 0; i < volAxis.numTicks; i++)
+	    {
+			if (i == 0 || i == volAxis.numTicks - 1)
+				continue
+			
+			var label = {};
+			label.text = String(Math.round(firstTick + (i * volInterval)));
+			label.y = yStart - (i * heightInterval);
+			label.x = xPos;
+			labels.push(label);
+			
+			var tick = {};
+			tick.y = yStart - (i * heightInterval);
+			tick.x = xPos;
+			ticks.push(tick);
+			
+			var gridLine = {};
+			gridLine.y = yStart - (i * heightInterval);
+			gridLine.x = xPos;
+			gridLines.push(gridLine);
+		}
+
+		var SVGLabels = d3.select("#volAxisLabels").selectAll("text")
+		.data(labels)
+		.enter()
+		.append("text")
+		
+		SVGLabels.attr("x", function (d) { return d.x + 10})
+		.attr("y", function (d) { return d.y + 4})
+		.text(function (d) { return d.text })
+		.attr("fill", "white")
+		.attr("fill", "#D3D3D3")
+		.attr("font-family", "Helvetica")
+		.attr("font-size", "13px")
+		
+		var SVGTicks = d3.select("#volAxisTicks").selectAll("line")
+		.data(ticks)
+		.enter()
+		.append("line")
+		
+		SVGTicks
+		.attr("x1", function (d) { return d.x })
+		.attr("x2", function (d) { return d.x + tickLength})
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y })
+		.attr("stroke-width", 1)
+		.attr("stroke", "white");
+		
+		var SVGGridLines = d3.select("#volAxisGridLines").selectAll("line")
+		.data(gridLines)
+		.enter()
+		.append("line")
+		
+		SVGGridLines
+		.attr("x1", function (d) { return 0 })
+		.attr("x2", function (d) { return d.x })
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y })
+		.attr("stroke-width", 0.5)
+		.attr("stroke", "white")
+		.attr("stroke-dasharray", "1,3");
+	}
+	
+	
+	IDEX.makeTimeAxisLabels = function(xAxis)
+	{
+		$("#xAxisLabels").empty();
+		$("#xAxisTicks").empty();
+
+		var labels = [];
+		
+		var ticks = [];
+		var tickLength = xAxis.tickLength
+		
+		
+		var firstTick = xAxis.min;
+		var lastTick = xAxis.max;
+		var axisRange = lastTick - firstTick;
+		
+		var xStart = xAxis.pos.left;
+		var yPos = xAxis.pos.top;
+		
+		var tickInterval = axisRange / (xAxis.numTicks - 1);
+		var xInterval = xAxis.width / (xAxis.numTicks - 1);
+
+	    for (var i = 0; i < xAxis.numTicks; i++)
+	    {
+			if (i == 0 || i == xAxis.numTicks - 1)
+				continue
+			
+			var label = {};
+			label.text = IDEX.formatTime(new Date(firstTick + (i * tickInterval)))
+			label.x = xStart + (i * xInterval);
+			label.y = yPos;
+			labels.push(label);
+			
+			var tick = {};
+			tick.x = xStart + (i * xInterval);
+			tick.y = yPos;
+			ticks.push(tick);
+	    }
+				
+		var SVGTimeLabels = d3.select("#xAxisLabels").selectAll("text")
+		.data(labels)
+		.enter()
+		.append("text")
+		
+		SVGTimeLabels
+		.attr("x", function (d) { return d.x - 20})
+		.attr("y", function (d) { return d.y + 16 })
+		.text(function (d) { return d.text })
+		.attr("fill", "#D3D3D3")
+		.attr("font-family", "Helvetica")
+		.attr("font-size", "12px")
+		
+		
+		var SVGTimeTicks = d3.select("#xAxisTicks").selectAll("line")
+		.data(ticks)
+		.enter()
+		.append("line")
+		
+		SVGTimeTicks
+		.attr("x1", function (d) { return d.x })
+		.attr("x2", function (d) { return d.x })
+		.attr("y1", function (d) { return d.y })
+		.attr("y2", function (d) { return d.y + tickLength})
+		.attr("stroke-width", 1)
+		.attr("stroke", "white");
+	}
+	
+	
+	function getTickPositions(numTicks)
+	{
+	    for (var i = 0; i < xAxis.numTicks + 1; i++)
+	    {
+			var label = {};
+			//console.log(new Date(firstTick + (i * tickInterval)).toJSON())
+			label.text = firstTick + (i * tickInterval);
+			label.x = xStart + (i * xInterval);
+			label.y = yPos;
+			labels.push(label);
+	    }
+	}
+	
 	return IDEX;
 	
 }(IDEX || {}, jQuery));
