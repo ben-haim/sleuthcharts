@@ -21,7 +21,9 @@ var IDEX = (function(IDEX, $, undefined)
 	IDEX.SkyNETParams = function(obj) 
 	{
 		this.baseurl = "http://api.finhive.com/v1.0/run.cgi?";
-		this.key = "9cf373ead4858e19bf93ae5ea238c4c796819cc883c877513f528b95721a1085";
+		//this.key = "9cf373ead4858e19bf93ae5ea238c4c796819cc883c877513f528b95721a1085";
+		this.key = "beta_test";
+
 		this.section = "";
 		this.run = "";
 		this.mode = "";
@@ -118,14 +120,22 @@ var IDEX = (function(IDEX, $, undefined)
 		var id = "15344649963748848799"
 		
         var obj = {}
-        obj['section'] = "crypto";
+		//obj['run'] = "indicator"
         obj['run'] = "quotes";
+        obj['section'] = "crypto";
         obj['mode'] = "bars";
         obj['exchg'] = "nxtae";
         obj['pair'] = id+"_NXT";
         obj['num'] = "600"
         obj['bars'] = "tick"
         obj['len'] = len
+		
+		//obj['icode'] = "ind_ema"
+		//obj['ion'] = "cl"
+		//obj['ilen'] = len
+		//obj['inum'] = "600"
+		//obj['iret'] = "merge"
+
         var params = new IDEX.SkyNETParams(obj)
         var url = params.makeURL()
 
@@ -305,6 +315,23 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		getData({}, barWidth).done(function(data)
 		{
+			/*var res = data.results
+			data = data.results.data
+			console.log(data)
+			
+			var lastTime = -1;
+			var lastIndex = 0
+			for (var i = 0; i < data.bar.length; i++)
+			{
+				var point = data.bar[i];
+				if (point[0] < lastTime)
+					lastIndex = i;
+				lastTime = point[0]
+			}
+			console.log(lastIndex)
+			data.bar = data.bar.splice(lastIndex)
+			var both = getStepOHLC(data.bar);*/
+			
 			console.log(data)
 			
 			var lastTime = -1;
@@ -508,7 +535,7 @@ var IDEX = (function(IDEX, $, undefined)
 		{
 			var newMin = (curMin + diff < curMax) ? curMin + diff : curMin;
 		}
-		
+			
 		redrawXAxis(newMax, newMin)
 		//calcPointWidth();
 		redraw()
@@ -557,7 +584,9 @@ var IDEX = (function(IDEX, $, undefined)
 		var a = Date.now()
 		//console.log(xAxis)
 		var allPhases = []
-		
+		var box = d3.select("#boxes")
+		var volBars = d3.select("#volbars")
+
 	    for (var i = 0; i < phasesLength; i++)
 		{
 			var phase = phases[i];
@@ -604,20 +633,22 @@ var IDEX = (function(IDEX, $, undefined)
 			
 			allPhases.push({"phase":phase, "pos":positions})
 			
-			var box = d3.select("#boxes").selectAll("path")
-			.data(allPhases)
-			.enter()
+			box
+			//.selectAll("path")
+			//.data(allPhases)
+			//.enter()
 			.append("path")
 			.attr("d", d.join(" "))
 			.attr("fill", fillColor)
 			.attr("stroke", strokeColor)
 			.attr("stroke-width", 1)
-			//.attr('shape-rendering', "crispEdges")
+			.attr('shape-rendering', "crispEdges")
 			
 			var volTop = volAxis.getPos(phase.volu);
 			var volHeight = volAxis.pos.bottom - volTop;
 			
-			d3.select("#volbars").append("rect")
+			volBars
+			.append("rect")
 			.attr("x", xPos)
 			.attr("y", volTop)
 			.attr("height", volHeight)
@@ -631,9 +662,10 @@ var IDEX = (function(IDEX, $, undefined)
 			
 		    xPos += xAxis.xStep;
 	    }
-		console.log(volAxis)
+
+		//console.log(volAxis)
 		curChart.pointData = allPhases;
-		
+
 		//console.log(Date.now() - a)	
     }
 
