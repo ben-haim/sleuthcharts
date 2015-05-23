@@ -218,7 +218,7 @@ var IDEX = (function(IDEX, $, undefined)
 			"widthInit":50,
 			
 			"padding":{
-				"top":50,
+				"top":25,
 				"left":20,
 			},
 			
@@ -782,7 +782,22 @@ var IDEX = (function(IDEX, $, undefined)
 			//console.log(new Date(closestPoint.phase.endTime))
 			var index = curChart.visiblePhases.indexOf(closestPoint.phase)
 			//console.log(index)
+			var marketInfoText = 
+			"<br>Date: " + String("a") + 
+			"Open: " + closestPoint.phase.open + 
+			"  High: " + closestPoint.phase.high + 
+			"	Low: " + closestPoint.phase.low + 
+			"  Close: " + closestPoint.phase.close + 
+			"  Volume: " + closestPoint.phase.volu
 			
+			d3.select("#candleInfo")
+			.text(marketInfoText)
+			.attr("y", priceAxis.pos.top - 5)
+			.attr("x", 10)
+			.attr("fill", "#D3D3D3")
+			.attr("font-family", "Helvetica")
+			.attr("font-size", "13px")
+
 			$("#cursor_follow_x")
 			.attr("x1", 0)
 			.attr("x2", width)
@@ -791,9 +806,9 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("stroke-width", 1)
 			.attr("stroke", "#D3D3D3");
 			
-			if (insideY >= priceAxis.padding.top && insideY <= priceAxis.pos.bottom)
+			if (insideY >= priceAxis.pos.top && insideY <= priceAxis.pos.bottom)
 			{
-				var insidePriceY = insideY - priceAxis.padding.top;
+				var insidePriceY = insideY - priceAxis.pos.top;
 				var price = priceAxis.getPriceFromY(insidePriceY)
 				price = price.toFixed(2)
 				
@@ -818,9 +833,41 @@ var IDEX = (function(IDEX, $, undefined)
 			}
 			else
 			{
-				hideRenders()
-				//$("#cursor_follow_price").text(""); 
-				//$("#backbox_price").attr("width", 0);
+				//hideRenders()
+				$("#cursor_follow_price").text(""); 
+				$("#backbox_price").attr("width", 0);
+			}
+			
+			
+			if (insideY >= volAxis.pos.top && insideY <= volAxis.pos.bottom)
+			{
+				var insideVolY = insideY - volAxis.pos.top;
+				var vol = volAxis.getPriceFromY(insideVolY)
+				vol = vol.toFixed(2)
+				
+				$("#cursor_follow_vol")
+				.text(vol)
+				.attr("y", insideY + 5)
+				.attr("x", volAxis.pos.left + 5)
+				.attr("fill", "#D3D3D3")
+				.attr("font-family", "Helvetica")
+				.attr("font-size", "13px")
+
+				
+				var volrect = d3.select("#cursor_follow_vol").node().getBBox();
+				d3.select("#backbox_vol")
+				.attr("x", volAxis.pos.left)
+				.attr("y", volrect.y)
+				.attr("width", volAxis.width)
+				.attr("height", volrect.height)
+				.attr("fill", "black")
+				.attr("stroke", "white")
+				.attr("stroke-width", 1);
+			}
+			else
+			{
+				$("#cursor_follow_vol").text(""); 
+				$("#backbox_vol").attr("width", 0);
 			}
 			
 			if (index != prevIndex && index >= 0) //&& (closestTime % pointRange <= pointRange/2))
@@ -868,9 +915,9 @@ var IDEX = (function(IDEX, $, undefined)
 				else
 				{
 					prevIndex = -1;
-					//$("#cursor_follow_time").text(""); 
-					//$("#backbox_time").attr("width", 0);
-					hideRenders()
+					$("#cursor_follow_time").text(""); 
+					$("#backbox_time").attr("width", 0);
+					//hideRenders()
 				}
 			}
 		}
@@ -1007,6 +1054,9 @@ var IDEX = (function(IDEX, $, undefined)
 		$("#cursor_follow_price").text(""); 
 		$("#backbox_time").attr("width", 0);
 		$("#backbox_price").attr("width", 0);
+		$("#cursor_follow_vol").text(""); 
+		$("#backbox_vol").attr("width", 0);
+		$("#candleInfo").text(""); 
 	}
 	
 

@@ -147,9 +147,21 @@ var IDEX = (function(IDEX, $, undefined)
 	}
 	
 	var fontLabelAttr = {
-		"fill": "#737373",
+		"fill": "#8C8C8C",
 		"font-family": "Helvetica",
 		"font-size": "12px"
+	}
+	
+	var tickAttr = {
+		"stroke": "white",
+		"stroke-width": 0.5
+	}
+	
+	var gridLineAttr = {
+		"stroke": "#8C8C8C",
+		"stroke-dasharray": "1,3",
+		"stroke-width": 0.5
+
 	}
 	
 	IDEX.Axis.prototype.makeLabels = function()
@@ -201,9 +213,11 @@ var IDEX = (function(IDEX, $, undefined)
 		var labels = []
 		var gridLines = [];
 		
+		var paddedMax = priceAxis.max + (priceAxis.max * priceAxis.maxPadding)
+		var paddedMin = priceAxis.min - (priceAxis.min * priceAxis.minPadding)
 		var scale = d3.scale.linear()
-		.domain([priceAxis.min, priceAxis.max])
-		.range([priceAxis.pos.top, priceAxis.pos.bottom])
+		.domain([paddedMin, paddedMax])
+		//.range([priceAxis.pos.top, priceAxis.pos.bottom])
 		
 		var tickVals = scale.ticks(8) //.map(o.tickFormat(8))
 		
@@ -214,7 +228,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var p = priceAxis.getPos(tickVals[i])
 			tickPositions.push(p)
 		}
-		
+		console.log(tickVals)
 		//var firstTick = priceAxis.min - (priceAxis.min * priceAxis.minPadding);
 		//var lastTick = priceAxis.max + (priceAxis.max * priceAxis.maxPadding);
 		//var axisRange = lastTick - firstTick;
@@ -271,8 +285,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", function (d) { return d.x + tickLength})
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y })
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr(tickAttr)
 		
 		var SVGTicksRight = d3.select("#yAxisTicksRight").selectAll("line")
 		.data(ticksRight)
@@ -284,8 +297,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", function (d) { return d.x - tickLength})
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y })
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr(tickAttr)
 		
 		
 		var SVGGridLines = d3.select("#yAxisGridLines").selectAll("line")
@@ -298,9 +310,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", function (d) { return d.x })
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y })
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "#737373")
-		.attr("stroke-dasharray", "1,3");
+		.attr(gridLineAttr)
 	}
 	
 	
@@ -319,8 +329,10 @@ var IDEX = (function(IDEX, $, undefined)
 		var labels = []
 		var gridLines = [];
 		
+		var paddedMax = volAxis.max + (volAxis.max * volAxis.maxPadding)
+		var paddedMin = volAxis.min - (volAxis.min * volAxis.minPadding)
 		var scale = d3.scale.linear()
-		.domain([volAxis.min, volAxis.max])
+		.domain([paddedMin, paddedMax])
 		//.range([volAxis.pos.bottom, volAxis.pos.top])
 
 		var tickVals = scale.ticks(6) //.map(o.tickFormat(8))
@@ -340,7 +352,6 @@ var IDEX = (function(IDEX, $, undefined)
 			if (tickVals[i] == 0)
 				continue
 			var yPos = tickPositions[i]
-			console.log(yPos)
 			var label = {};
 			label.text = String(tickVals[i]);
 			label.y = yPos;
@@ -388,8 +399,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", function (d) { return d.x + tickLength})
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y })
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr(tickAttr)
 		
 		var SVGTicksRight = d3.select("#volAxisTicksRight").selectAll("line")
 		.data(ticksRight)
@@ -401,8 +411,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", function (d) { return d.x - tickLength})
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y })
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "white");
+		.attr(tickAttr)
 		
 		var SVGGridLines = d3.select("#volAxisGridLines").selectAll("line")
 		.data(gridLines)
@@ -414,9 +423,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", function (d) { return d.x })
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y })
-		.attr("stroke-width", 0.5)
-		.attr("stroke", "#737373")
-		.attr("stroke-dasharray", "1,3");
+		.attr(gridLineAttr)
 	}
 	
 	
@@ -482,8 +489,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", function (d) { return d.x })
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y + tickLength})
-		.attr("stroke-width", 1)
-		.attr("stroke", "white");
+		.attr(tickAttr)
 	}
 	
 	
