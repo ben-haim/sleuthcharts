@@ -221,7 +221,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var yPos = tickPositions[i] + 0.5;
 			var text = String(tickVals[i]);
 			
-			var label = makeLabel(xPos, yPos, text, maxTextWidth)
+			var label = makeLabel(xPos, yPos, text, maxTextWidth, priceAxis)
 			labels.push(label);
 			
 			var tick = makeLeftTick(xPos, yPos);
@@ -331,7 +331,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var yPos = tickPositions[i] + 0.5;
 			var text = String(tickVals[i]);
 			
-			var label = makeLabel(xPos, yPos, text, maxTextWidth)
+			var label = makeLabel(xPos, yPos, text, maxTextWidth, volAxis)
 			labels.push(label);
 			
 			var tick = makeLeftTick(xPos, yPos);
@@ -349,7 +349,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.enter()
 		.append("text")
 		
-		SVGLabels.attr("x", function (d) { return d.x + 10})
+		SVGLabels.attr("x", function (d) { return d.x })
 		.attr("y", function (d) { return d.y + 4})
 		.text(function (d) { return d.text })
 		.attr(fontLabelAttr)
@@ -398,20 +398,24 @@ var IDEX = (function(IDEX, $, undefined)
 	
 	
 	
-	function makeLabel(xPos, yPos, text, maxTextWidth)
+	function makeLabel(xPos, yPos, text, maxTextWidth, axis)
 	{
 		var label = {};
 		
+		var axisWidth = axis.width;
+		var tickLenth = axis.tickLength;
+		var fixedTextPadding = 5
+		
 		var textWidth = getTextPixelWidth(text);
-		var diff = textWidth - maxTextWidth
+		var diff = maxTextWidth - textWidth 
 		var shift = 0
 		
 		if (diff >= 1)
 			shift = diff/2
-		
+		//console.log(axisWidth - textWidth)
 		label.text = text;
 		label.y = yPos;
-		label.x = xPos + shift;
+		label.x = xPos + shift + 5 + axis.tickLength;
 		
 		return label;
 	}
@@ -474,8 +478,7 @@ var IDEX = (function(IDEX, $, undefined)
 	function getNewAxisWidth(yAxis, newWidth)
 	{
 		var textPadding = 5;
-		var combinedWidth = newWidth + (yAxis.tickLength * 2)
-		combinedWidth += textPadding * 2
+		var combinedWidth = newWidth + (yAxis.tickLength * 2) + (textPadding * 2)
 		
 		return combinedWidth
 	}
@@ -536,15 +539,23 @@ var IDEX = (function(IDEX, $, undefined)
 		}
 		
 		var showTicks = []
-		var numTicks = Math.floor((chart.pointData.length) / tickStep)
-		var numTicks =  Math.floor(xAxis.width / tickStep) 
-		var tickJump = Math.floor(numTicks / xAxis.xStep)
-
-		var i = xAxis.tickStepStart;
-		while (i < chart.pointData.length)
+		
+		if (tickStep >= chart.pointData.length)
 		{
-			showTicks.push(chart.pointData[i])
-			i += tickJump;
+			var index = Math.floor((chart.pointData.length - 1) / 2)
+			showTicks.push(chart.pointData[index])
+		}
+		else
+		{
+			var numTicks =  Math.floor(xAxis.width / tickStep) 
+			var tickJump = Math.floor(numTicks / xAxis.xStep)
+
+			var i = xAxis.tickStepStart;
+			while (i < chart.pointData.length)
+			{
+				showTicks.push(chart.pointData[i])
+				i += tickJump;
+			}
 		}
 		xAxis.showTicks = showTicks
 		

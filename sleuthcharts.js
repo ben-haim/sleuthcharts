@@ -214,7 +214,7 @@ var IDEX = (function(IDEX, $, undefined)
 		}
 		var priceAxisOpt = {
 			"chart":curChart,
-			"heightInit":"60%",
+			"heightInit":"75%",
 			"widthInit":50,
 			
 			"padding":{
@@ -232,7 +232,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		var volAxisOpt = {
 			"chart":curChart,
-			"heightInit":"40%",
+			"heightInit":"25%",
 			"widthInit":50,
 			
 			"padding":{
@@ -285,6 +285,7 @@ var IDEX = (function(IDEX, $, undefined)
 		xAxis.resize()
 		updateAxisPos();	
 	}
+	
 	function updateAxisPos()
 	{
 		priceAxis.pos['top'] = priceAxis.padding['top'];
@@ -309,10 +310,45 @@ var IDEX = (function(IDEX, $, undefined)
 		IDEX.makePriceAxisLabels(priceAxis);
 		IDEX.makeVolAxisLabels(volAxis);
 		IDEX.makeTimeAxisLabels(xAxis);
+		drawInd();
 		priceSeriesLine();
 		highLowPrice();
 	}
+
+	function getInd(options, len)
+	{
+		var dfd = new $.Deferred();
+		var id = "15344649963748848799"
+		
+        var obj = {}
+		obj['run'] = "indicator"
+        //obj['run'] = "quotes";
+        obj['section'] = "crypto";
+        obj['mode'] = "bars";
+        obj['exchg'] = "nxtae";
+        obj['pair'] = id+"_NXT";
+        obj['num'] = "600"
+        obj['bars'] = "tick"
+        obj['len'] = len
+		
+		obj['icode'] = "ind_ema"
+		obj['ion'] = "cl"
+		obj['ilen'] = 7
+		obj['inum'] = "600"
+		obj['iret'] = "solo"
+
+        var params = new IDEX.SkyNETParams(obj)
+        var url = params.makeURL()
+
+		$.getJSON(url, function(data)
+		{
+			dfd.resolve(data)	
+		})
+		
+		return dfd.promise()
+	}
 	
+	var indi;
 	function updateChart()
 	{
         var params = {"requestType":"getTrades","asset":"15344649963748848799"};
@@ -337,35 +373,90 @@ var IDEX = (function(IDEX, $, undefined)
 			data.bar = data.bar.splice(lastIndex)
 			var both = getStepOHLC(data.bar);*/
 			
-			console.log(data)
-			
-			var lastTime = -1;
-			var lastIndex = 0
-			for (var i = 0; i < data.results.length; i++)
+			getInd({}, barWidth).done(function(ind)
 			{
-				var point = data.results[i];
-				if (point[0] < lastTime)
-					lastIndex = i;
-				lastTime = point[0]
-			}
-			console.log(lastIndex)
-			data.results = data.results.splice(lastIndex)
-			var both = getStepOHLC(data.results);
-			var ohlc = both[0]
-			var vol = both[1]
-			//console.log(both)
-			//console.log(data)
-			
-			makeChart()
-			
-			curChart.barWidth = barWidth
-			curChart.phases = ohlc
+				console.log(ind)
+				console.log(data)
+				
+				var lastTime = -1;
+				var lastIndex = 0
+				for (var i = 0; i < data.results.length; i++)
+				{
+					var point = data.results[i];
+					if (point[0] < lastTime)
+						lastIndex = i;
+					lastTime = point[0]
+				}
+				console.log(lastIndex)
+				data.results = data.results.slice(lastIndex)
+				indi = ind.results.data.slice(lastIndex)
+				
+				var both = getStepOHLC(data.results);
+				var ohlc = both[0]
+				var vol = both[1]
+				//console.log(both)
+				//console.log(data)
+				
+				makeChart()
+				
+				curChart.barWidth = barWidth
+				curChart.phases = ohlc
 
-			initAxisRange();
-			resizeAxis();
-			redraw()
+				initAxisRange();
+				resizeAxis();
+				redraw()
+				resizeAxis();
+				redraw()
+				
+			})
 			
 		})
+	}
+	
+	function drawInd()
+	{
+		$("#ind").empty()
+		
+		var visInd = indi.slice(xAxis.minIndex, xAxis.maxIndex+1)
+		var flow = []
+		var positions = []
+
+		for (var i = 0; i < visInd.length; i++)
+		{
+			var candle = curChart.pointData[i];
+			var price = visInd[i];
+			var pos = Math.floor(priceAxis.getPos(price));
+			positions.push({"x":candle.pos.middle, "y":pos})
+			if (i == 0)
+			{
+				
+				flow.push("M")
+				flow.push(candle.pos.middle)
+				flow.push(pos)
+			}
+			else
+			{
+				flow.push("L")
+				flow.push(candle.pos.middle)
+				flow.push(pos)
+			}
+			
+		}
+		
+		var lineFunc = d3.svg.line()
+			.x(function(d) { return d.x; })
+			.y(function(d) { return d.y; })
+			.interpolate("basis")
+
+		
+		d3.select("#ind")
+		.append("path")
+		//.attr("d", flow.join(" "))
+		.attr("d", lineFunc(positions))
+		.attr("stroke", "#EDE22E")
+		.attr("stroke-width", "1.5px")
+		.attr("fill", "none")
+		//.attr("shape-rendering", "crispEdges");
 	}
 
 	
@@ -373,66 +464,35 @@ var IDEX = (function(IDEX, $, undefined)
 	{
 		var numShow = 30;
 		var index = 0;
-		
+		var vis = []
 		if (curChart.phases.length > numShow)
 		{
 			index = curChart.phases.length - numShow;
-			curChart.visiblePhases = curChart.phases.slice(index);
+			vis = curChart.phases.slice(index);
 		}
 		else
 		{
-			curChart.visiblePhases = curChart.phases.slice(index);
+			vis = curChart.phases.slice(index);
 		}
 		
-		calcPointWidth();
-
-		xAxis.dataMin = curChart.phases[0].startTime;
-		xAxis.dataMax = curChart.phases[curChart.phases.length-1].startTime
-		xAxis.min = curChart.visiblePhases[0].startTime;
-		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
-		xAxis.minIndex = index;
-		xAxis.maxIndex = curChart.phases.length - 1;
-		
-		var priceMinMax = IDEX.getMinMax(curChart.visiblePhases)
-		priceAxis.min = priceMinMax[1]
-		priceAxis.max = priceMinMax[0]
-		
-		var volMinMax = IDEX.getMinMaxVol(curChart.visiblePhases)
-		volAxis.min = 0 //volMinMax[0]
-		volAxis.max = volMinMax[1]
-	}
-	
-	
-	function redrawXAxis(newMax, newMin)
-	{
-		for (var i = 0; i < curChart.phases.length; i++)
+		if (calcPointWidth(vis) || true);
 		{
-			var phase = curChart.phases[i];
+			curChart.visiblePhases = vis
+			xAxis.dataMin = curChart.phases[0].startTime;
+			xAxis.dataMax = curChart.phases[curChart.phases.length-1].startTime
+			xAxis.min = curChart.visiblePhases[0].startTime;
+			xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+			xAxis.minIndex = index;
+			xAxis.maxIndex = curChart.phases.length - 1;
 			
-			if ( phase.startTime >= newMin)
-			{
-				if (i != 0)
-					i--;
-				break;
-			}
+			var priceMinMax = IDEX.getMinMax(curChart.visiblePhases)
+			priceAxis.min = priceMinMax[1]
+			priceAxis.max = priceMinMax[0]
+			
+			var volMinMax = IDEX.getMinMaxVol(curChart.visiblePhases)
+			volAxis.min = 0 //volMinMax[0]
+			volAxis.max = volMinMax[1]
 		}
-		
-		curChart.visiblePhases = curChart.phases.slice(i, xAxis.maxIndex + 1);
-		
-		calcPointWidth()
-		xAxis.minIndex = i;
-		xAxis.maxIndex = xAxis.maxIndex;
-		xAxis.min = curChart.visiblePhases[0].startTime;
-		xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
-		//console.log(curChart.visiblePhases);
-		
-		var priceMinMax = IDEX.getMinMax(curChart.visiblePhases)
-		priceAxis.min = priceMinMax[1]
-		priceAxis.max = priceMinMax[0]
-		
-		var volMinMax = IDEX.getMinMaxVol(curChart.visiblePhases)
-		volAxis.min = 0 //volMinMax[0]
-		volAxis.max = volMinMax[1]
 	}
 	
 	
@@ -464,15 +524,56 @@ var IDEX = (function(IDEX, $, undefined)
 			//console.log(xAxis.maxIndex)
 			//console.log(curChart.phases.length - 1)
 			//console.log(vis[0].startTime)
-			//console.log(curChart.visiblePhases[0].startTime)
-			curChart.visiblePhases = vis;
+			//console.log(curChart.visiblePhases[0].startTime)			
+			if (calcPointWidth(vis))
+			{
+				curChart.visiblePhases = vis;
+				xAxis.minIndex = startIndex;
+				xAxis.maxIndex = endIndex;
+				xAxis.min = curChart.visiblePhases[0].startTime;
+				xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+				
+				var priceMinMax = IDEX.getMinMax(curChart.visiblePhases)
+				priceAxis.min = priceMinMax[1]
+				priceAxis.max = priceMinMax[0]
+				
+				var volMinMax = IDEX.getMinMaxVol(curChart.visiblePhases)
+				volAxis.min = 0 //volMinMax[0]
+				volAxis.max = volMinMax[1]
+				//console.log(xAxis.maxIndex)
+				//console.log(xAxis)
+
+
+			}
+		}
+
+	}
+	
+	
+	function redrawXAxis(newMax, newMin)
+	{
+		for (var i = 0; i < curChart.phases.length; i++)
+		{
+			var phase = curChart.phases[i];
 			
-			calcPointWidth()
-			
-			xAxis.minIndex = startIndex;
-			xAxis.maxIndex = endIndex;
+			if (phase.startTime >= newMin)
+			{
+				if (i != 0)
+					i--;
+				break;
+			}
+		}
+		
+		var vis = curChart.phases.slice(i, xAxis.maxIndex + 1);
+		
+		if (calcPointWidth(vis))
+		{
+			curChart.visiblePhases = vis
+			xAxis.minIndex = i;
+			xAxis.maxIndex = xAxis.maxIndex;
 			xAxis.min = curChart.visiblePhases[0].startTime;
 			xAxis.max = curChart.visiblePhases[curChart.visiblePhases.length-1].startTime
+			//console.log(curChart.visiblePhases);
 			
 			var priceMinMax = IDEX.getMinMax(curChart.visiblePhases)
 			priceAxis.min = priceMinMax[1]
@@ -481,42 +582,10 @@ var IDEX = (function(IDEX, $, undefined)
 			var volMinMax = IDEX.getMinMaxVol(curChart.visiblePhases)
 			volAxis.min = 0 //volMinMax[0]
 			volAxis.max = volMinMax[1]
-			//console.log(xAxis.maxIndex)
-			//console.log(xAxis)
 		}
-
 	}
 	
-	
-	function calcPointWidth()
-	{
-		var minWidth = 1;
-		var padding = 0.5;
-	    var width = xAxis.width / curChart.visiblePhases.length
-		width = width < minWidth ? minWidth : width;
-		if (width >= 3) padding = 2;
-		if (width >= 5) padding = 3.5;
-		if (width >= 10) padding = 5;
-		if (width >= 20) padding = 10;
-		if (width >= 100) padding = 20;
-		
-		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
-		var scale = padding / width;
-		width = width - padding
-		
-		xAxis.xStep = width + padding;
-		xAxis.pointWidth = width;
-		xAxis.pointPadding = padding;
-		xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
-		
-		//console.log("w:"+String(width))
-		//console.log(xAxis.width / curChart.visiblePhases.length)
-		//console.log(padding)
-		//console.log(curChart.visiblePhases.length)
-		//console.log(xAxis.numPoints)
-	}
 
-	
 	function zoomChart(isZoomOut)
 	{
 		var curMax = xAxis.max;
@@ -541,8 +610,43 @@ var IDEX = (function(IDEX, $, undefined)
 		}
 			
 		redrawXAxis(newMax, newMin)
-		//calcPointWidth();
+		resizeAxis()
+
 		redraw()
+	}
+	
+	function calcPointWidth(vis)
+	{
+		var minWidth = 1;
+		var padding = 1;
+	    var fullWidth = xAxis.width / vis.length
+		if (fullWidth >= 3) padding = 2;
+		if (fullWidth >= 5) padding = 3.5;
+		if (fullWidth >= 10) padding = 5;
+		if (fullWidth >= 20) padding = 10;
+		if (fullWidth >= 100) padding = 20;
+
+		var pointWidth = fullWidth - padding
+		console.log(String(fullWidth) + " " + String(vis.length) + " " + String(pointWidth))
+		//console.log(pointWidth)
+		if (pointWidth < minWidth)
+			return false
+		//pointWidth = pointWidth < minWidth ? minWidth : width;
+		
+		//console.log(String(xAxis.xStep) + "    " + String(xAxis.width) + String(xAxis.numPoints));
+		//var scale = padding / fullWidth;
+		
+		xAxis.xStep = fullWidth;
+		xAxis.pointWidth = pointWidth;
+		xAxis.pointPadding = padding;
+		xAxis.numPoints = Math.floor(xAxis.width / xAxis.xStep);
+		
+		return true
+		//console.log("w:"+String(width))
+		//console.log(xAxis.width / curChart.visiblePhases.length)
+		//console.log(padding)
+		//console.log(curChart.visiblePhases.length)
+		//console.log(xAxis.numPoints)
 	}
 	
 	
@@ -563,11 +667,7 @@ var IDEX = (function(IDEX, $, undefined)
 			console.log(d)
 		})*/
 		
-		priceAxis.resize()
-		volAxis.resize()
-		xAxis.resize()
-		
-		updateAxisPos()
+		resizeAxis()
 		calcPointWidth()
 		redraw()
 	})
@@ -600,16 +700,24 @@ var IDEX = (function(IDEX, $, undefined)
 			
 			var strokeColor = closedHigher ? "#6c6" : "#d00";
 			var fillColor = closedHigher ?  "transparent" : "#a80808";
-
+			if (xAxis.pointWidth <= 2 && closedHigher)
+			{
+				//console.log(xAxis.pointWidth)
+				fillColor = "transparent"
+			}
+			else
+			{
+				//console.log(xAxis.pointWidth)
+			}
 		    //var midline = priceAxis.getPos(phase.averagePrice);
 		    var bottomBody = priceAxis.getPos(bottom);
 		    var bottomLeg = priceAxis.getPos(phase.low);
 		    var topBody = priceAxis.getPos(top);
 		    var topLeg = priceAxis.getPos(phase.high);
 			
-			var left = xPos;
-			var right = left + xAxis.pointWidth;
-			var xMiddle = (left + right) / 2;
+			var left = xPos + 0.5;
+			var right = (left + xAxis.pointWidth) - 0.5;
+			var xMiddle = ((left - 0.5) + (right + 0.5)) / 2;
 			//console.log(String(left) + " " + String(right) + " " + String(xMiddle))
 			if (bottomBody - topBody < 1)
 			{
@@ -664,10 +772,10 @@ var IDEX = (function(IDEX, $, undefined)
 			
 			volBars
 			.append("rect")
-			.attr("x", xPos)
+			.attr("x", xPos + 1)
 			.attr("y", volTop - 2)
 			.attr("height", volHeight)
-			.attr("width", xAxis.pointWidth)
+			.attr("width", xAxis.pointWidth - 0.5)
 			.attr("fill", fillColor)
 			.attr("stroke", strokeColor)
 			.attr("stroke-width", 1)
@@ -933,8 +1041,8 @@ var IDEX = (function(IDEX, $, undefined)
 				$("#cursor_follow_y")
 				//.attr("x1", insideX + 0.5)
 				//.attr("x2", insideX + 0.5)
-				.attr("x1", closestPoint.pos.middle + 0.5)
-				.attr("x2", closestPoint.pos.middle + 0.5)
+				.attr("x1", closestPoint.pos.middle)
+				.attr("x2", closestPoint.pos.middle)
 				.attr("y1", 0)
 				.attr("y2", height)
 				.attr("stroke-width", 1)
@@ -1001,7 +1109,7 @@ var IDEX = (function(IDEX, $, undefined)
 				//console.log(shifts)
 				draggingPos = insideTimeX
 				shiftXAxis(shifts, direction)
-
+				resizeAxis();
 				redraw()
 			}
 		}
