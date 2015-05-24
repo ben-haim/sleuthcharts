@@ -35,6 +35,9 @@ var IDEX = (function(IDEX, $, undefined)
 
 		IDEX.constructFromObject(this, obj);
 		
+		this.xAxis.series.push(this);
+		this.yAxis.series.push(this);
+		
 	}
 	
 	

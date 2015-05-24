@@ -1,23 +1,4 @@
 
-/*
-
-		timeAxis = new IDEX.Axis();
-		timeAxis.width = 900;
-		timeAxis.height = 50;
-		timeAxis.top = 650;
-		timeAxis.left = 10;
-		timeAxis.bottom = 700;
-		timeAxis.numTicks = 8;
-		
-		priceAxis = new IDEX.Axis()
-		priceAxis.height = 600;
-		priceAxis.width = 90;
-		priceAxis.bottom = 650;
-		priceAxis.top = 50;
-		priceAxis.left = 910;
-		priceAxis.numTicks = 6;
-		
-*/
 
 var IDEX = (function(IDEX, $, undefined) 
 {   
@@ -54,22 +35,52 @@ var IDEX = (function(IDEX, $, undefined)
 		this.numTicks = 0;
 		this.tickInterval = 0;
 		this.tickLength = 0;
+		this.tickStep = 0;
+		this.tickStepStart = 0;
 		
 		this.labels = [];
 		this.tickPositions = [];
+		this.showTicks = [];
 
+		this.isXAxis = false;
+		this.series = [];
+		
 		IDEX.constructFromObject(this, obj);
 	}
+	
+	
 	
 	IDEX.Axis.prototype.resize = function(val, hw)
 	{
 		var bbox = d3.select("#ex_chart")[0][0].getBoundingClientRect();
 		var wrapWidth = bbox.width;
 		var wrapHeight = bbox.height;
-		
-		convertedHeight = this.resizeHW(this.heightInit, wrapHeight);
-		convertedWidth = this.resizeHW(this.widthInit, wrapWidth);
-		
+			
+		if (this.isXAxis)
+		{
+			var widest = 0;
+			for (var i = 0; i < this.series.length; i++)
+			{
+				var yAxis = this.series[i].yAxis;
+				
+				if (yAxis.width > widest)
+					widest = yAxis.width;
+			}
+
+			
+			convertedHeight = this.resizeHW(this.heightInit, wrapHeight);
+			convertedWidth = this.resizeHW("100%", wrapWidth);
+			convertedWidth = convertedWidth - (widest + yAxis.padding.left) - this.padding.left;
+		}
+		else
+		{
+			var xAxis = this.series[0].xAxis;
+			var len = this.series[0].xAxis.series.length;
+			
+			convertedHeight = this.resizeHW(this.heightInit, wrapHeight);
+			convertedHeight = ((convertedHeight - (xAxis.height / len)) - (xAxis.padding.top / len)) - this.padding.top
+			convertedWidth = this.resizeHW(this.widthInit, wrapWidth);	
+		}
 		this.height = convertedHeight;
 		this.width = convertedWidth;
 	}
@@ -89,6 +100,11 @@ var IDEX = (function(IDEX, $, undefined)
 		return converted
 	}
 	
+	IDEX.Axis.prototype.setYAxis = function(width)
+	{
+		this.widthInit = width
+	}
+
 	
 	IDEX.Axis.prototype.getPos = function(pointValue)
 	{
@@ -158,46 +174,12 @@ var IDEX = (function(IDEX, $, undefined)
 	}
 	
 	var gridLineAttr = {
-		"stroke": "#8C8C8C",
+		"stroke": "#404040",
 		"stroke-dasharray": "1,3",
-		"stroke-width": 0.5
+		"stroke-width": 1
 
 	}
-	
-	IDEX.Axis.prototype.makeLabels = function()
-	{
-		$("#"+this.containerID).empty();
-		
-		var labels = [];
-		var range = this.max - this.min;
-		var tickInterval = range / this.numTicks;
-		
-		var start = this.isXAxis ? 0 : this.height;
-		var step = this.isXAxis ? (this.width / this.numTicks) : (this.height / this.numTicks)
-		var fixedStep = this.isXAxis ? this.bottom : this.left
 
-	    for(var i = 0; i < this.numTicks + 1; i++)
-	    {
-			var label = {};
-			
-			label.text = this.min + (i * tickInterval);
-			label.x = start + (i * step);
-			label.y = fixedStep;
-			labels.push(label);
-	    }
-		
-		var SVGTimeLabels = d3.select("#"+this.containerID).selectAll("text")
-		.data(labels)
-		.enter()
-		.append("text")
-		
-		SVGTimeLabels
-		.attr("x", function (d) { return d.x })
-		.attr("y", function (d) { return d.y })
-		.text(function (d) { return d.text })
-		.attr("fill", "white");
-	}
-	
 	
 	IDEX.makePriceAxisLabels = function(priceAxis)
 	{
@@ -213,13 +195,13 @@ var IDEX = (function(IDEX, $, undefined)
 		var labels = []
 		var gridLines = [];
 		
-		var paddedMax = priceAxis.max + (priceAxis.max * priceAxis.maxPadding)
-		var paddedMin = priceAxis.min - (priceAxis.min * priceAxis.minPadding)
+		var paddedMax = priceAxis.max + (priceAxis.max * (priceAxis.maxPadding))
+		var paddedMin = priceAxis.min - (priceAxis.min * (priceAxis.minPadding))
 		var scale = d3.scale.linear()
 		.domain([paddedMin, paddedMax])
-		//.range([priceAxis.pos.top, priceAxis.pos.bottom])
+		.range([priceAxis.pos.bottom, priceAxis.pos.top])
 		
-		var tickVals = scale.ticks(8) //.map(o.tickFormat(8))
+		var tickVals = scale.ticks(10) //.map(o.tickFormat(8))
 		
 		var tickPositions = []
 		
@@ -228,39 +210,27 @@ var IDEX = (function(IDEX, $, undefined)
 			var p = priceAxis.getPos(tickVals[i])
 			tickPositions.push(p)
 		}
-		console.log(tickVals)
-		//var firstTick = priceAxis.min - (priceAxis.min * priceAxis.minPadding);
-		//var lastTick = priceAxis.max + (priceAxis.max * priceAxis.maxPadding);
-		//var axisRange = lastTick - firstTick;
-		//var yStart = priceAxis.pos.bottom;
-		//var priceInterval = axisRange / (priceAxis.numTicks - 1);
-		//var heightInterval = Math.round(priceAxis.height / (priceAxis.numTicks - 1));
 		var xPos = priceAxis.pos.left;
 		
+		var maxTextWidth = getMaxTextWidth(tickVals)
+		var newAxisWidth = getNewAxisWidth(priceAxis, maxTextWidth)
+		updateYAxisWidth(priceAxis, newAxisWidth)
 		
 	    for (var i = 0; i < tickPositions.length; i++)
 	    {
-			var yPos = tickPositions[i]
+			var yPos = tickPositions[i] + 0.5;
+			var text = String(tickVals[i]);
 			
-			var label = {};
-			label.text = String(tickVals[i])
-			label.y = yPos
-			label.x = xPos;
+			var label = makeLabel(xPos, yPos, text, maxTextWidth)
 			labels.push(label);
 			
-			var tick = {};
-			tick.y = yPos;
-			tick.x = xPos;
+			var tick = makeLeftTick(xPos, yPos);
 			ticks.push(tick);
 			
-			var tickRight = {};
-			tickRight.y = yPos;
-			tickRight.x = xPos + priceAxis.width;
+			var tickRight = makeRightTick(xPos, yPos, priceAxis);
 			ticksRight.push(tickRight);
 			
-			var gridLine = {};
-			gridLine.y = yPos;
-			gridLine.x = xPos;
+			var gridLine = makeGridLine(xPos, yPos);
 			gridLines.push(gridLine);
 		}
 
@@ -321,7 +291,6 @@ var IDEX = (function(IDEX, $, undefined)
 		$("#volAxisTicksRight").empty();
 		$("#volAxisGridLines").empty();
 		
-		
 		var ticks = [];
 		var ticksRight = [];
 		var tickLength = volAxis.tickLength
@@ -347,30 +316,31 @@ var IDEX = (function(IDEX, $, undefined)
 
 		var xPos = volAxis.pos.left;
 		
+
+		var maxTextWidth = getMaxTextWidth(tickVals)
+		var newAxisWidth = getNewAxisWidth(volAxis, maxTextWidth)
+		updateYAxisWidth(volAxis, newAxisWidth)
+
+		//console.log(String(textWid) + " " + String(tickLength*2) + " " + String(axisWidth))
+		
 	    for (var i = 0; i < tickPositions.length; i++)
 	    {	
 			if (tickVals[i] == 0)
 				continue
-			var yPos = tickPositions[i]
-			var label = {};
-			label.text = String(tickVals[i]);
-			label.y = yPos;
-			label.x = xPos;
+			
+			var yPos = tickPositions[i] + 0.5;
+			var text = String(tickVals[i]);
+			
+			var label = makeLabel(xPos, yPos, text, maxTextWidth)
 			labels.push(label);
 			
-			var tick = {};
-			tick.y = yPos;
-			tick.x = xPos;
+			var tick = makeLeftTick(xPos, yPos);
 			ticks.push(tick);
 			
-			var tickRight = {};
-			tickRight.y = yPos;
-			tickRight.x = xPos + volAxis.width;
+			var tickRight = makeRightTick(xPos, yPos, volAxis);
 			ticksRight.push(tickRight);
 			
-			var gridLine = {};
-			gridLine.y = yPos;
-			gridLine.x = xPos;
+			var gridLine = makeGridLine(xPos, yPos);
 			gridLines.push(gridLine);
 		}
 
@@ -427,6 +397,101 @@ var IDEX = (function(IDEX, $, undefined)
 	}
 	
 	
+	
+	function makeLabel(xPos, yPos, text, maxTextWidth)
+	{
+		var label = {};
+		
+		var textWidth = getTextPixelWidth(text);
+		var diff = textWidth - maxTextWidth
+		var shift = 0
+		
+		if (diff >= 1)
+			shift = diff/2
+		
+		label.text = text;
+		label.y = yPos;
+		label.x = xPos + shift;
+		
+		return label;
+	}
+	
+	function makeLeftTick(xPos, yPos)
+	{
+		var tick = {};
+		
+		tick.x = xPos;
+		tick.y = yPos;
+		
+		return tick;
+	}
+	
+	function makeRightTick(xPos, yPos, axis)
+	{
+		var tickRight = {};
+		
+		tickRight.y = yPos;
+		tickRight.x = xPos + axis.width;
+		
+		return tickRight;
+	}
+	
+	function makeGridLine(xPos, yPos)
+	{
+		var gridLine = {};
+		
+		gridLine.y = yPos;
+		gridLine.x = xPos;
+		
+		return gridLine;
+	}
+
+	function getTextPixelWidth(text)
+	{
+		var canvas = document.createElement('canvas');
+		var ctx = canvas.getContext("2d");
+		ctx.font = "12px Helvetica"; 
+		
+		return ctx.measureText(text).width;
+	}
+	
+	function getMaxTextWidth(vals)
+	{
+		var max = 0
+		
+		for (var i = 0; i < vals.length; i++)
+		{
+			var text = String(vals[i]);
+			var wid = getTextPixelWidth(text);
+			
+			if (wid > max)
+				max = wid
+		}
+		
+		return max
+	}
+	
+	function getNewAxisWidth(yAxis, newWidth)
+	{
+		var textPadding = 5;
+		var combinedWidth = newWidth + (yAxis.tickLength * 2)
+		combinedWidth += textPadding * 2
+		
+		return combinedWidth
+	}
+	
+
+	function updateYAxisWidth(yAxis, newWidth)
+	{
+		for (var i = 0; i < yAxis.series[0].xAxis.series.length; i++)
+		{
+			var otherAxis = yAxis.series[0].xAxis.series[i].yAxis
+			if (otherAxis.width < newWidth)
+				otherAxis.setYAxis(newWidth)
+		}
+	}
+	
+	
 	IDEX.makeTimeAxisLabels = function(xAxis)
 	{
 		$("#xAxisLabels").empty();
@@ -437,8 +502,73 @@ var IDEX = (function(IDEX, $, undefined)
 		var ticks = [];
 		var tickLength = xAxis.tickLength
 		
+		var tickStep = 6;
+		var tickStepStart = 0;
+		var chart = xAxis.chart
+
+		if (xAxis.showTicks.length)
+		{
+			var index = -1;
+			for (var i = 0; i < chart.pointData.length; i++)
+			{
+				var point = chart.pointData[i]
+				for (var j = 0; j < xAxis.showTicks.length; j++)
+				{
+					var showTick = xAxis.showTicks[j];
+					if (point.phase == showTick.phase)
+					{
+						index = i;
+						break;
+					}
+				}
+				
+				if (index != -1)
+					break;
+			}
+			if (index == -1)
+			{
+				xAxis.tickStepStart = 0;
+			}
+			else
+			{
+				xAxis.tickStepStart = index % tickStep;
+			}
+		}
 		
-		var firstTick = xAxis.min;
+		var showTicks = []
+		var numTicks = Math.floor((chart.pointData.length) / tickStep)
+		var numTicks =  Math.floor(xAxis.width / tickStep) 
+		var tickJump = Math.floor(numTicks / xAxis.xStep)
+
+		var i = xAxis.tickStepStart;
+		while (i < chart.pointData.length)
+		{
+			showTicks.push(chart.pointData[i])
+			i += tickJump;
+		}
+		xAxis.showTicks = showTicks
+		
+		var yPos = xAxis.pos.top;
+		
+		for (var i = 0; i < showTicks.length; i++)
+		{
+			var showTick = showTicks[i];
+			var xPos = showTick.pos.middle;
+			
+			var label = {};
+			label.text = IDEX.formatTime(new Date(showTick.phase.startTime))
+			label.x = xPos
+			label.y = yPos;
+			labels.push(label);
+			
+			var tick = {};
+			tick.x = xPos;
+			tick.y = yPos;
+			ticks.push(tick);
+		}
+		
+		
+		/*var firstTick = xAxis.min;
 		var lastTick = xAxis.max;
 		var axisRange = lastTick - firstTick;
 		
@@ -463,7 +593,7 @@ var IDEX = (function(IDEX, $, undefined)
 			tick.x = xStart + (i * xInterval);
 			tick.y = yPos;
 			ticks.push(tick);
-	    }
+	    }*/
 				
 		var SVGTimeLabels = d3.select("#xAxisLabels").selectAll("text")
 		.data(labels)

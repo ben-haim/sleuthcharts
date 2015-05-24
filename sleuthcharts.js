@@ -200,7 +200,7 @@ var IDEX = (function(IDEX, $, undefined)
 		var xAxisOpt = {
 			"chart":curChart,
 			"heightInit":20,
-			"widthInit":"90%",
+			"widthInit":"100%",
 			
 			"padding":{
 				"top":0,
@@ -232,7 +232,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		var volAxisOpt = {
 			"chart":curChart,
-			"heightInit":"20%",
+			"heightInit":"40%",
 			"widthInit":50,
 			
 			"padding":{
@@ -252,9 +252,6 @@ var IDEX = (function(IDEX, $, undefined)
 		priceAxis = new IDEX.Axis(priceAxisOpt)
 		volAxis = new IDEX.Axis(volAxisOpt)
 		
-		xAxis.resize()
-		priceAxis.resize()
-		volAxis.resize()
 		
 		var candleSeriesOpt = {
 			"xAxis":xAxis,
@@ -268,19 +265,26 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		var candleSeries = new IDEX.Series(candleSeriesOpt)
 		var volSeries = new IDEX.Series(volSeriesOpt)
+		
+		resizeAxis();
 
 		candleSeries.height = candleSeries.yAxis.height;
 		candleSeries.width = candleSeries.xAxis.width;
 		candleSeries.pos['left'] = candleSeries.xAxis.pos['left'];
 
-		updateAxisPos()
-
-		
 		console.log(xAxis)
 		console.log(priceAxis)
 		console.log(volAxis)
 	}
 	
+	
+	function resizeAxis()
+	{
+		priceAxis.resize()
+		volAxis.resize()
+		xAxis.resize()
+		updateAxisPos();	
+	}
 	function updateAxisPos()
 	{
 		priceAxis.pos['top'] = priceAxis.padding['top'];
@@ -306,6 +310,7 @@ var IDEX = (function(IDEX, $, undefined)
 		IDEX.makeVolAxisLabels(volAxis);
 		IDEX.makeTimeAxisLabels(xAxis);
 		priceSeriesLine();
+		highLowPrice();
 	}
 	
 	function updateChart()
@@ -357,8 +362,9 @@ var IDEX = (function(IDEX, $, undefined)
 			curChart.phases = ohlc
 
 			initAxisRange();
-			//calcPointWidth();
+			resizeAxis();
 			redraw()
+			
 		})
 	}
 
@@ -440,7 +446,6 @@ var IDEX = (function(IDEX, $, undefined)
 			{
 				var startIndex = xAxis.minIndex - shifts;
 				var endIndex = xAxis.maxIndex - shifts;
-				
 				vis = curChart.phases.slice(startIndex, endIndex+1);
 			}
 		}
@@ -450,7 +455,6 @@ var IDEX = (function(IDEX, $, undefined)
 			{
 				var startIndex = xAxis.minIndex + shifts;
 				var endIndex = xAxis.maxIndex + shifts;
-				
 				vis = curChart.phases.slice(startIndex, endIndex+1);
 			}
 		}
@@ -559,9 +563,9 @@ var IDEX = (function(IDEX, $, undefined)
 			console.log(d)
 		})*/
 		
-		xAxis.resize()
 		priceAxis.resize()
 		volAxis.resize()
+		xAxis.resize()
 		
 		updateAxisPos()
 		calcPointWidth()
@@ -595,7 +599,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var bottom = closedHigher ? phase.open : phase.close;
 			
 			var strokeColor = closedHigher ? "#6c6" : "#d00";
-			var fillColor = closedHigher ?  "black" : "#a80808";
+			var fillColor = closedHigher ?  "transparent" : "#a80808";
 
 		    //var midline = priceAxis.getPos(phase.averagePrice);
 		    var bottomBody = priceAxis.getPos(bottom);
@@ -612,6 +616,13 @@ var IDEX = (function(IDEX, $, undefined)
 				bottomBody += 0.5;
 				topBody -= 0.5;
 			}
+			left += 0.5
+			right += 0.5
+			xMiddle += 0.5
+			topLeg += 0.5
+			topBody += 0.5
+			bottomBody += 0.5
+			bottomLeg += 0.5
 			
 			var d = [
 				"M", left, topBody, 
@@ -630,7 +641,11 @@ var IDEX = (function(IDEX, $, undefined)
 			positions['left'] = left;
 			positions['right'] = right;
 			positions['middle'] = xMiddle;
-			
+			positions['topLeg'] = topLeg;
+			positions['topBody'] = topBody;
+			positions['bottomBody'] = bottomBody;
+			positions['bottomLeg'] = bottomLeg;
+
 			allPhases.push({"phase":phase, "pos":positions})
 			
 			box
@@ -642,7 +657,7 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("fill", fillColor)
 			.attr("stroke", strokeColor)
 			.attr("stroke-width", 1)
-			.attr('shape-rendering', "crispEdges")
+			//.attr('shape-rendering', "crispEdges")
 			
 			var volTop = volAxis.getPos(phase.volu);
 			var volHeight = volAxis.pos.bottom - volTop;
@@ -650,7 +665,7 @@ var IDEX = (function(IDEX, $, undefined)
 			volBars
 			.append("rect")
 			.attr("x", xPos)
-			.attr("y", volTop)
+			.attr("y", volTop - 2)
 			.attr("height", volHeight)
 			.attr("width", xAxis.pointWidth)
 			.attr("fill", fillColor)
@@ -670,6 +685,47 @@ var IDEX = (function(IDEX, $, undefined)
     }
 
 
+	function highLowPrice()
+	{
+		if (!xAxis)
+			return
+		var points = curChart.pointData
+		var highestPrice = null;
+		var lowestPrice = null;
+
+		for (var i = 0; i < points.length; ++i)
+		{
+			if (highestPrice === null || points[i].phase.high >= highestPrice.phase.high)
+			{
+				highestPrice = points[i]
+			}
+			if (lowestPrice === null || points[i].phase.low <= lowestPrice.phase.low)
+			{
+				lowestPrice = points[i]
+			}
+		}
+				
+		var fontAttr = {
+			"fill": "#B0B0B0",
+			"font-family": "Helvetica",
+			"font-size": "13px"
+		}
+		
+		$("#highestPrice")
+		.text("- " + String(highestPrice.phase.high))
+		.attr('x', highestPrice.pos.middle)
+		.attr('y', highestPrice.pos.topLeg - 2)
+		.attr(fontAttr)
+		
+		$("#lowestPrice")
+		.text("- " + String(lowestPrice.phase.low))
+		.attr('x', lowestPrice.pos.middle)
+		.attr('y', lowestPrice.pos.bottomLeg + 2)
+		.attr(fontAttr)
+	
+	}
+	
+	
 	function getPoint(value) 
 	{
 		var val = null;
@@ -783,7 +839,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var index = curChart.visiblePhases.indexOf(closestPoint.phase)
 			//console.log(index)
 			var marketInfoText = 
-			"<br>Date: " + String("a") + 
+			//"Date: " + String("a") + 
 			"Open: " + closestPoint.phase.open + 
 			"  High: " + closestPoint.phase.high + 
 			"	Low: " + closestPoint.phase.low + 
@@ -991,6 +1047,10 @@ var IDEX = (function(IDEX, $, undefined)
 	{
 		$("#seriesLine").empty();
 		
+		var lineAttr = {
+			"stroke-width": 1,
+			"stroke": "#404040"
+		}
 		var bbox = d3.select("#ex_chart")[0][0].getBoundingClientRect()	
 		//console.log(bbox)
 		
@@ -1000,16 +1060,14 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", bbox.right)
 		.attr("y1", priceAxis.pos['bottom'] + 0.5)
 		.attr("y2", priceAxis.pos['bottom'] + 0.5)
-		.attr("stroke-width", 1)
-		.attr("stroke", "#737373");
+		.attr(lineAttr)
 		
 		d3.select("#seriesLine").append("line")
 		.attr("x1", priceAxis.pos['left'] + 0.5)
 		.attr("x2", priceAxis.pos['left'] + 0.5)
 		.attr("y1", 0)
 		.attr("y2", priceAxis.pos['bottom'])
-		.attr("stroke-width", 1)
-		.attr("stroke", "#737373");
+		.attr(lineAttr)
 		
 		//volaxis
 		d3.select("#seriesLine").append("line")
@@ -1017,16 +1075,14 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", bbox.right)
 		.attr("y1", volAxis.pos['bottom'] + 0.5)
 		.attr("y2", volAxis.pos['bottom'] + 0.5)
-		.attr("stroke-width", 1)
-		.attr("stroke", "#737373");
+		.attr(lineAttr)
 		
 		d3.select("#seriesLine").append("line")
 		.attr("x1", volAxis.pos['left'] + 0.5)
 		.attr("x2", volAxis.pos['left'] + 0.5)
 		.attr("y1", 0)
 		.attr("y2", volAxis.pos['bottom'])
-		.attr("stroke-width", 1)
-		.attr("stroke", "#737373");
+		.attr(lineAttr)
 		
 		//xaxis
 		d3.select("#seriesLine").append("line")
@@ -1034,16 +1090,14 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("x2", bbox.right)
 		.attr("y1", xAxis.pos['top'] + 0.5)
 		.attr("y2", xAxis.pos['top'] + 0.5)
-		.attr("stroke-width", 1)
-		.attr("stroke", "#737373");
+		.attr(lineAttr)
 		
 		d3.select("#seriesLine").append("line")
 		.attr("x1", 0 )
 		.attr("x2", bbox.right)
 		.attr("y1", xAxis.pos['bottom'] + 0.5)
 		.attr("y2", xAxis.pos['bottom'] + 0.5)
-		.attr("stroke-width", 1)
-		.attr("stroke", "#737373");
+		.attr(lineAttr)
 	}
 	
 	function hideRenders()
@@ -1089,6 +1143,47 @@ var IDEX = (function(IDEX, $, undefined)
 		return element.transform.baseVal.initialize(element.ownerSVGElement.createSVGTransformFromMatrix(m));
 	};
 	
+	var line;
+	var isDrawing = false;
+
+	/*var vis = d3.select("#ex_chart")
+		.on("mousedown", mousedown)
+		.on("mouseup", mouseup)
+		.on("mousemove", mousemove);*/
+
+	//$("chartwrap").mousedown(function(){
+	function mousedown()
+	{
+		var lineAttr = {
+			"stroke-width": 1,
+			"stroke": "#404040"
+		}
+		
+		var m = d3.mouse(this);
+		line = vis.append("line")
+		.attr("x1", m[0])
+		.attr("y1", m[1])
+		.attr("x2", m[0])
+		.attr("y2", m[1])
+		.attr(lineAttr);
+		isDrawing = true
+	}
+
+	function mousemove() 
+	{
+		if (isDrawing)
+		{
+			var m = d3.mouse(this);
+			line.attr("x2", m[0])
+				.attr("y2", m[1]);
+	
+		}
+	}
+
+	function mouseup() 
+	{
+		isDrawing = false;
+	}
 	
 	
 	
