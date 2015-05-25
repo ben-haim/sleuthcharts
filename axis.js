@@ -66,7 +66,6 @@ var IDEX = (function(IDEX, $, undefined)
 				if (yAxis.width > widest)
 					widest = yAxis.width;
 			}
-
 			
 			convertedHeight = this.resizeHW(this.heightInit, wrapHeight);
 			convertedWidth = this.resizeHW("100%", wrapWidth);
@@ -81,9 +80,11 @@ var IDEX = (function(IDEX, $, undefined)
 			convertedHeight = ((convertedHeight - (xAxis.height / len)) - (xAxis.padding.top / len)) - this.padding.top
 			convertedWidth = this.resizeHW(this.widthInit, wrapWidth);	
 		}
+		
 		this.height = convertedHeight;
 		this.width = convertedWidth;
 	}
+	
 	
 	IDEX.Axis.prototype.resizeHW = function(hw, wrapHW)
 	{
@@ -99,6 +100,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		return converted
 	}
+	
 	
 	IDEX.Axis.prototype.setYAxis = function(width)
 	{
@@ -119,16 +121,6 @@ var IDEX = (function(IDEX, $, undefined)
 		return pos
 	}
 	
-	/*IDEX.Axis.prototype.getPos = function(pointValue)
-	{
-		var num = pointValue - this.min;
-		var range = this.max - this.min;
-		var ratio = num / range;
-		var pos = Number((this.pos.bottom - (ratio * this.height)).toFixed(4));
-		console.log(String(pointValue) + "    " + String(ratio) + "  " + String(pos));
-		return pos
-	}*/
-	
 	
 	IDEX.Axis.prototype.getPriceFromY = function(yPos)
 	{
@@ -142,25 +134,16 @@ var IDEX = (function(IDEX, $, undefined)
 		return price
 	}
 	
-	/*IDEX.Axis.prototype.getPriceFromY = function(yPos)
-	{
-		var range = this.max - this.min;
-		var ratio = yPos / this.height;
-		var num = ratio * range
-		var price = this.max - num
-		return price
-	}*/
 	
 	IDEX.Axis.prototype.getXVal = function(xPos)
 	{
-		//console.log(this.max)
-		//console.log(this.min)
 		var range = this.max - this.min;
 		var ratio = xPos / this.width;
 		var num = ratio * range;
 		num = this.min + num;
 		return num;
 	}
+	
 	
 	var fontLabelAttr = {
 		"fill": "#8C8C8C",
@@ -197,6 +180,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		var paddedMax = priceAxis.max + (priceAxis.max * (priceAxis.maxPadding))
 		var paddedMin = priceAxis.min - (priceAxis.min * (priceAxis.minPadding))
+		
 		var scale = d3.scale.linear()
 		.domain([paddedMin, paddedMax])
 		.range([priceAxis.pos.bottom, priceAxis.pos.top])
@@ -210,6 +194,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var p = priceAxis.getPos(tickVals[i])
 			tickPositions.push(p)
 		}
+		
 		var xPos = priceAxis.pos.left;
 		
 		var maxTextWidth = getMaxTextWidth(tickVals)
@@ -257,6 +242,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("y2", function (d) { return d.y })
 		.attr(tickAttr)
 		
+		
 		var SVGTicksRight = d3.select("#yAxisTicksRight").selectAll("line")
 		.data(ticksRight)
 		.enter()
@@ -300,6 +286,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		var paddedMax = volAxis.max + (volAxis.max * volAxis.maxPadding)
 		var paddedMin = volAxis.min - (volAxis.min * volAxis.minPadding)
+		
 		var scale = d3.scale.linear()
 		.domain([paddedMin, paddedMax])
 		//.range([volAxis.pos.bottom, volAxis.pos.top])
@@ -356,8 +343,7 @@ var IDEX = (function(IDEX, $, undefined)
 		//.attr("text-anchor", "end")
 		//.attr("font-weight", "bold")
 		//.attr("fill", "#737373")
-		//.attr("font-family", "Helvetica")
-		//.attr("font-size", "13px")
+		
 		
 		var SVGTicks = d3.select("#volAxisTicks").selectAll("line")
 		.data(ticks)
@@ -371,6 +357,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("y2", function (d) { return d.y })
 		.attr(tickAttr)
 		
+		
 		var SVGTicksRight = d3.select("#volAxisTicksRight").selectAll("line")
 		.data(ticksRight)
 		.enter()
@@ -382,6 +369,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("y1", function (d) { return d.y })
 		.attr("y2", function (d) { return d.y })
 		.attr(tickAttr)
+		
 		
 		var SVGGridLines = d3.select("#volAxisGridLines").selectAll("line")
 		.data(gridLines)
@@ -395,7 +383,6 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr("y2", function (d) { return d.y })
 		.attr(gridLineAttr)
 	}
-	
 	
 	
 	function makeLabel(xPos, yPos, text, maxTextWidth, axis)
@@ -420,6 +407,7 @@ var IDEX = (function(IDEX, $, undefined)
 		return label;
 	}
 	
+	
 	function makeLeftTick(xPos, yPos)
 	{
 		var tick = {};
@@ -429,6 +417,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		return tick;
 	}
+	
 	
 	function makeRightTick(xPos, yPos, axis)
 	{
@@ -440,6 +429,7 @@ var IDEX = (function(IDEX, $, undefined)
 		return tickRight;
 	}
 	
+	
 	function makeGridLine(xPos, yPos)
 	{
 		var gridLine = {};
@@ -449,6 +439,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		return gridLine;
 	}
+	
 
 	function getTextPixelWidth(text)
 	{
@@ -458,6 +449,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		return ctx.measureText(text).width;
 	}
+	
 	
 	function getMaxTextWidth(vals)
 	{
@@ -474,6 +466,7 @@ var IDEX = (function(IDEX, $, undefined)
 		
 		return max
 	}
+	
 	
 	function getNewAxisWidth(yAxis, newWidth)
 	{
@@ -578,33 +571,6 @@ var IDEX = (function(IDEX, $, undefined)
 			ticks.push(tick);
 		}
 		
-		
-		/*var firstTick = xAxis.min;
-		var lastTick = xAxis.max;
-		var axisRange = lastTick - firstTick;
-		
-		var xStart = xAxis.pos.left;
-		var yPos = xAxis.pos.top;
-		
-		var tickInterval = axisRange / (xAxis.numTicks - 1);
-		var xInterval = xAxis.width / (xAxis.numTicks - 1);
-
-	    for (var i = 0; i < xAxis.numTicks; i++)
-	    {
-			if (i == 0 || i == xAxis.numTicks - 1)
-				continue
-			
-			var label = {};
-			label.text = IDEX.formatTime(new Date(firstTick + (i * tickInterval)))
-			label.x = xStart + (i * xInterval);
-			label.y = yPos;
-			labels.push(label);
-			
-			var tick = {};
-			tick.x = xStart + (i * xInterval);
-			tick.y = yPos;
-			ticks.push(tick);
-	    }*/
 				
 		var SVGTimeLabels = d3.select("#xAxisLabels").selectAll("text")
 		.data(labels)
@@ -633,19 +599,6 @@ var IDEX = (function(IDEX, $, undefined)
 		.attr(tickAttr)
 	}
 	
-	
-	function getTickPositions(numTicks)
-	{
-	    for (var i = 0; i < xAxis.numTicks + 1; i++)
-	    {
-			var label = {};
-			//console.log(new Date(firstTick + (i * tickInterval)).toJSON())
-			label.text = firstTick + (i * tickInterval);
-			label.x = xStart + (i * xInterval);
-			label.y = yPos;
-			labels.push(label);
-	    }
-	}
 	
 	return IDEX;
 	
