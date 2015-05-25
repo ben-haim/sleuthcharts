@@ -627,7 +627,7 @@ var IDEX = (function(IDEX, $, undefined)
 		if (fullWidth >= 100) padding = 20;
 
 		var pointWidth = fullWidth - padding
-		console.log(String(fullWidth) + " " + String(vis.length) + " " + String(pointWidth))
+		//console.log(String(fullWidth) + " " + String(vis.length) + " " + String(pointWidth))
 		//console.log(pointWidth)
 		if (pointWidth < minWidth)
 			return false
@@ -698,7 +698,7 @@ var IDEX = (function(IDEX, $, undefined)
 			var top = closedHigher ? phase.close : phase.open;
 			var bottom = closedHigher ? phase.open : phase.close;
 			
-			var strokeColor = closedHigher ? "#6c6" : "#d00";
+			var strokeColor = closedHigher ? "#19B34C" : "#d00";
 			var fillColor = closedHigher ?  "transparent" : "#a80808";
 			if (xAxis.pointWidth <= 2 && closedHigher)
 			{
@@ -716,8 +716,8 @@ var IDEX = (function(IDEX, $, undefined)
 		    var topLeg = priceAxis.getPos(phase.high);
 			
 			var left = xPos + 0.5;
-			var right = (left + xAxis.pointWidth) - 0.5;
-			var xMiddle = ((left - 0.5) + (right + 0.5)) / 2;
+			var right = (left + xAxis.pointWidth) - 1;
+			var xMiddle = ((left) + (right)) / 2;
 			//console.log(String(left) + " " + String(right) + " " + String(xMiddle))
 			if (bottomBody - topBody < 1)
 			{
@@ -765,7 +765,7 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("fill", fillColor)
 			.attr("stroke", strokeColor)
 			.attr("stroke-width", 1)
-			//.attr('shape-rendering', "crispEdges")
+			.attr('shape-rendering', "crispEdges")
 			
 			var volTop = volAxis.getPos(phase.volu);
 			var volHeight = volAxis.pos.bottom - volTop;
@@ -775,10 +775,11 @@ var IDEX = (function(IDEX, $, undefined)
 			.attr("x", xPos + 1)
 			.attr("y", volTop - 2)
 			.attr("height", volHeight)
-			.attr("width", xAxis.pointWidth - 0.5)
+			.attr("width", xAxis.pointWidth - 1)
 			.attr("fill", fillColor)
 			.attr("stroke", strokeColor)
 			.attr("stroke-width", 1)
+			.attr('shape-rendering', "crispEdges")
 			
 			//console.log(volAxis.getPos(phase.volu));
 			//console.log(phase.volu)

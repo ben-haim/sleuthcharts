@@ -304,7 +304,7 @@ var IDEX = (function(IDEX, $, undefined)
 		.domain([paddedMin, paddedMax])
 		//.range([volAxis.pos.bottom, volAxis.pos.top])
 
-		var tickVals = scale.ticks(6) //.map(o.tickFormat(8))
+		var tickVals = scale.ticks(4) //.map(o.tickFormat(8))
 		
 		var tickPositions = []
 		for (var i = 0; i < tickVals.length; i++)
