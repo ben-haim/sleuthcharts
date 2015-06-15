@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="jquery-ui/jquery-ui.min.css" />
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+	<div id="body_wrap">
+
+		<div class="browse-chart-header chart-wrap" data-chart="main_menu_chart">
+
+			<div class="browse-chart-search-wrap">
+				<div class="browse-chart-search-input vert-align">
+					<input type="text" name="pair" class="skynet-search" id="main_chart_pair_input"></input>
+				</div>
+			</div>
+				
+				
+			<div class="horiz-list horiz-list-main mm-interval-type active" data-inttype="Tick">
+				<div class ="horiz-list-title">
+					<span class="vert-align" id="temp_chart_click">Tick Interval: </span>
+				</div>
+				<div class="num-ticks horiz-list-options">
+					<div class="horiz-list-option"><span class="vert-align">5</span></div>
+					<div class="horiz-list-option"><span class="vert-align">10</span></div>
+					<div class="horiz-list-option"><span class="vert-align">25</span></div>
+					<div class="horiz-list-option"><span class="vert-align active">100</span></div>
+					<div class="horiz-list-option"><span class="vert-align">300</span></div>
+					<div class="horiz-list-option"><span class="vert-align">500</span></div>
+				</div>
+			</div>
+			
+			<div class="horiz-list horiz-list-main mm-interval-type" data-inttype="Time">
+				<div class ="horiz-list-title">
+					<span class="vert-align">Time Interval: </span>
+				</div>
+				<div class="time-interval horiz-list-options">
+					<div class="horiz-list-option"><span class="vert-align">5m</span></div>
+					<div class="horiz-list-option"><span class="vert-align">15m</span></div>
+					<div class="horiz-list-option"><span class="vert-align">30m</span></div>
+					<div class="horiz-list-option"><span class="vert-align">1h</span></div>
+					<div class="horiz-list-option"><span class="vert-align">6h</span></div>
+					<div class="horiz-list-option"><span class="vert-align">12h</span></div>
+					<div class="horiz-list-option"><span class="vert-align">1d</span></div>
+				</div>
+			</div>
+			
+			<div class="chart-style dropdown-chart">
+				<div class="dropdown-title dropdown-title-main vert-align">
+					<span>Config &#9662;</span>
+				</div>
+
+				<div class="dropdown-wrap dropdown-wrap-main">
+				
+					<table class="chart-table">
+						<tbody>
+							<tr>
+								<td>Bar Type</td>
+								<td>
+									<ul class="mm-chart-config mm-chart-bartype">
+										<li>Time</li>
+										<li class="active">Tick</li>
+									</ul>
+								</td>
+							</tr>
+							<tr>
+								<td>Chart Type</td>
+								<td>
+									<ul class="mm-chart-config mm-chart-charttype">
+										<li class="active">Candlestick</li>
+										<li>OHLC</li>
+										<li>Line</li>
+										<li>Area</li>
+									</ul>
+								</td>
+							</tr>
+							<tr>
+								<td>Indicator</td>
+								<td>
+									<ul class="mm-chart-config mm-chart-indicator">
+										<li class="active">EMA</li>
+										<li>SMA</li>
+										<li>BBands</li>
+										<li>None</li>
+									</ul>
+								</td>
+							</tr>
+							<tr>
+								<td>Time Scale</td>
+								<td>
+									<ul class="mm-chart-config mm-chart-timescale">
+										<li class="active">Linear</li>
+										<li>Logarithmic</li>
+									</ul>
+								</td>
+							</tr>
+							<tr>
+								<td>Min/Max Padding</td>
+								<td>
+									<ul class="mm-chart-config mm-chart-depth">
+										<li>0%</li>
+										<li>1%</li>
+										<li>2%</li>
+										<li>5%</li>
+										<li class="active">10%</li>
+									</ul>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					
+				</div>
+			</div>
+			
+		</div>
+		
+
+		<div class="browse-chart-wrap" style="cursor:none !important">
+			<div class="chart-loading">
+				<span>Loading</span>
+			</div>
+		</div>
+			
+		
+	</div>
+
+
+ <!--   ----------------------------------------------->
+    <script src="jquery-2.1.1.js"></script>
+	<script src="jquery-ui.min.js"></script>
+	<script src="jquery.ui.autocomplete.html.js"></script>
+	
+	<script src="init.js" type="text/javascript"></script>
+	<script src="autocomplete.js" type="text/javascript"></script>
+
+	<script src="d3.min.js" type="text/javascript"></script>
+	<script src="sleuthcharts.mainchart.js" type="text/javascript"></script>
+	<script src="sleuthcharts.axis.js" type="text/javascript"></script>
+	<script src="sleuthcharts.series.js" type="text/javascript"></script>
+	<script src="sleuthcharts.data.js" type="text/javascript"></script>
+	<script src="sleuthcharts.utils.js" type="text/javascript"></script>
+	<script src="sleuthcharts.init.js" type="text/javascript"></script>
+	<script src="sleuthcharts.indicators.js" type="text/javascript"></script>
+
+	<!--<script src="idex.slack.js" type="text/javascript"></script>-->
+
+
+
+</body>
+
+</html>

@@ -1,0 +1,309 @@
+﻿
+
+*, *::after, *::before {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	-o-box-sizing: border-box;
+	-ms-box-sizing: border-box; 
+}
+  
+* {
+    padding: 0px;
+    margin: 0px;
+	font-smoothing: antialiased;
+}
+
+html {
+	width: 100%;
+	height: 100%;
+}
+
+body {
+	font-size: .7rem;
+	color: #e5e5e5;
+	background-color: black; 
+}
+
+input {
+	color:#e5e5e5;
+}
+
+
+.ui-state-hover, .ui-state-active, .ui-state-highlight, .ui-state-focus, .ui-state-default {
+    background-color: rgba(200,200,200,1) !important;
+    background-image: none !important;
+}
+
+.ui-autocomplete {
+	z-index: 2003;
+	background-image: none;
+	background-color: #e5e5e5;
+	height: 200px;
+	overflow-y: scroll;
+	overflow-x: hidden; 
+	font-size: 0.65rem;
+}
+
+.ui-autocomplete > li > a {
+	color: black;
+}
+
+
+.vert-align {
+	display:block;
+	position:relative;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.vert-align-abs {
+	display:block;
+	position:absolute;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.vert-align-horiz-align {
+	display:block;
+	position:relative;
+	top: 50%;
+	left: 50%;
+	transform: translateX(-50%) translateY(-50%);
+}
+
+.clickable {
+	cursor: pointer;
+}
+
+.unselectable {
+    -moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+	cursor:default;
+}
+
+
+.horiz-list {
+	height:100%;
+	display:inline-block;
+	float:left;
+	margin-right:20px;
+	margin-left:40px;
+	font-size:12px;
+}
+
+.horiz-list-main {
+	font-size: 13px;
+}
+
+.mm-interval-type {
+	display:none;
+}
+
+.mm-interval-type.active {
+	display:inline-block;
+}
+
+.horiz-list-title {
+	height:100%;
+	float:left;
+}
+
+.horiz-list-options {
+	height:100%;
+
+	float:left;
+}
+
+.horiz-list-option {
+	height:100%;
+	display:inline-block;
+	float:left;
+	position:relative;
+	padding-left:10px;
+}
+
+.horiz-list-option:hover {
+	color:#EDB379;
+	cursor:pointer;
+}
+
+.horiz-list-option span.active {
+	color:#EDB379;
+}
+
+.num-ticks span.active {
+	color:#EDB379;
+}
+
+.dropdown-chart {
+	display:inline-block;
+	width: 100px;
+	text-align: center;
+	vertical-align:middle;
+	height:100%;
+	background-color:black;
+	float:left;
+}
+
+.dropdown-title {
+	display: block;
+	padding: 5px 10px;
+	font-size:12px;
+}
+
+.dropdown-title-main {
+	font-size:13px;
+}
+
+.dropdown-title.active {
+	border:1px solid #303030;
+	border-bottom:none;
+	z-index:100;
+}
+
+.dropdown-wrap {
+	position:absolute;
+	display:none;
+	z-index:101;
+	font-size: 13px;
+	background:black;
+	border:1px solid #303030;
+}
+
+.dropdown-wrap-main {
+	top:30px;
+}
+
+.dropdown-wrap-tile {
+	top:25px;
+}
+
+
+.dropdown-wrap.active {
+	display:block;
+}
+
+.chart-table {
+	margin-bottom:5px;
+	margin-top:5px;
+	margin-left:10px;
+	margin-right:10px;
+	border-collapse:collapse;
+}
+
+.chart-table tr {
+	text-align:left;
+	border-bottom:1px solid #303030;
+	line-height:18px;
+}
+
+.chart-table td {
+	padding:6px;
+	padding-right:15px;
+	text-align:left;
+}
+
+.chart-table tr:last-child {
+	border-bottom:none;
+}
+
+.chart-table ul {
+	list-style:none;
+	text-align:left;
+}
+
+.chart-table li {
+	display:inline-block;
+	padding-right:10px;
+	color: #329ddc;
+}
+
+.mm-chart-config  li.active {
+	color:#EDB379;
+}
+
+.mm-chart-config  li:hover {
+	cursor:pointer;
+	color:#EDB379;
+}
+
+.chart-loading {
+	height:100%;
+	width:100%;
+	position:absolute;
+	display:none;
+	z-index:100;
+	float:left;
+	vertical-align:middle;
+	cursor:default;
+	background-color: rgba(0,0,0,0.6);
+}
+
+.chart-loading span {
+	text-align:center;
+	display:block;
+	font-size:1rem;
+	position:relative;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+
+.browse-chart-header {
+	height:40px;
+	width:100%;
+	position:relative;
+	display:block;
+	border-bottom:1px solid #303030;
+	background-color:#0a0a0a;
+}
+
+.browse-chart-search-wrap {
+	padding-left:40px;
+	height:100%;
+	width:200px;
+	position:relative;
+	display:block;
+	float:left;
+}
+
+.browse-chart-search-input input {
+	width:100%;
+	padding-left:6px;
+	position:relative;
+	display:block;
+	background:#0a0a0a;
+	border:1px solid #303030;
+}
+
+.browse-chart-wrap {
+	height:700px;
+	width:100%;
+	position:relative;
+	display:block;
+}
+
+
+.sky-auto-wrap {
+	width:100%;
+	height:100%;
+	position:absolute;
+	display:block;
+	font-size:13px;
+	top:0px;
+}
+
+.sky-auto-cell {
+	width:30%;
+	position:relative;
+	display:inline-block;
+}
+
+.sky-cell-ex {
+	text-align:right;
+}
+
