@@ -24,7 +24,7 @@ var IDEX = (function(IDEX, $, undefined)
 		var counter = 0;
 		var a = $.grep(auto, function( item )
 		{
-			if (counter > 10)
+			if (counter > 20)
 				return false;
 			var $el = $(item.label)
 			var pair = ""
@@ -44,7 +44,7 @@ var IDEX = (function(IDEX, $, undefined)
 			return (ret);
 		});
 
-		response(a.slice(0, 20));
+		response(a.slice(0, 40));
 	}
 	
 	function skynetSelection($thisScope, e, ui)
